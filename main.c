@@ -24,28 +24,30 @@ int main(int argc, char** argv) {
     fillTriangle(renderer, vec1, vec2, vecC, 50, 128, 128, 128);
 
     SDL_RenderPresent(renderer); */
-   
 
 
 
 
 
-    
-    
+
+
+
 
     start = clock();
 
-    Manifold torus = get_space(torus); 
+    Manifold torus;
+
+    get_space(&torus); 
     // Manifold torus1 = get_space(torus1);
   
-    torus = torus_init(torus, 2.5, 2);
+    torus_init(&torus, 2.5, 2);
     // torus1 = torus_init(torus, 3, 2);
  
 
     //torus = M_rotate(torus, PI / 6, 'x');
     //torus = M_rotate(torus, PI / 4, 'y');
 
-    torus_draw(renderer, torus, 0, 0, 10);
+    torus_draw(renderer, &torus, 0, 0, 10);
     // torus_draw(renderer, torus1, 400, 0);
 
 
@@ -88,15 +90,15 @@ int main(int argc, char** argv) {
         //SDL_RenderPresent(renderer);
 
 
-        torus_draw(renderer, torus, 0, 100 * sin(theta), precision);
+        torus_draw(renderer, &torus, 0, 100 * sin(theta), precision);
         // torus_draw(renderer, torus1, 400, 120 * sin(theta));
        
 
         SDL_RenderPresent(renderer);
 
 
-        torus = M_rotate(torus, deltaRad, 'x');
-        torus = M_rotate(torus, deltaRad, 'y');
+        M_rotate(&torus, deltaRad, 'x');
+        M_rotate(&torus, deltaRad, 'y');
 
         // torus1 = M_rotate(torus1, deltaRad, 'x');
         // torus1 = M_rotate(torus1, deltaRad, 'y');

@@ -34,27 +34,27 @@ SDL_Renderer* SDL_INIT(SDL_Window** window, const char* name, int width, int hei
 
 
 
-Manifold get_space(Manifold manifold) {
+void get_space(Manifold* manifold) {
 
-    manifold.x = malloc(POINTS * sizeof(float));
-    if(manifold.x == NULL) {
+    manifold->x = malloc(POINTS * sizeof(float));
+    if(manifold->x == NULL) {
         perror("bruh");
-        return manifold;
+        return;
     }
 
-    manifold.y = malloc(POINTS * sizeof(float));
-    if(manifold.y == NULL) {
+    manifold->y = malloc(POINTS * sizeof(float));
+    if(manifold->y == NULL) {
         perror("bruh");
-        return manifold;
+        return;
     }
 
-    manifold.z = malloc(POINTS * sizeof(float));
-    if(manifold.z == NULL) {
+    manifold->z = malloc(POINTS * sizeof(float));
+    if(manifold->z == NULL) {
         perror("bruh");
-        return manifold;
+        return;
     }
 
-    return manifold;
+    return;
 }
 
 
@@ -91,7 +91,7 @@ float dotproduct(Vector3 vector1, Vector3 vector2) {
 
 
 
-Manifold sphere_init(Manifold manifold, float radius) {
+void sphere_init(Manifold* manifold, float radius) {
     
     int r = radius * 25;
     int index = 0;
@@ -100,19 +100,19 @@ Manifold sphere_init(Manifold manifold, float radius) {
         for(int k = 0; k < PIXELS; k++) {
         index = j * PIXELS + k;  
 
-        manifold.x[index] = (int) r * cos(2 * PI * k / PIXELS) * sin(PI * j / PIXELS);
-        manifold.y[index] = (int) r * sin(2 * PI * k / PIXELS) * sin(PI * j / PIXELS);
-        manifold.z[index] = (int) r * cos(PI * j / PIXELS);
+        manifold->x[index] = (int) r * cos(2 * PI * k / PIXELS) * sin(PI * j / PIXELS);
+        manifold->y[index] = (int) r * sin(2 * PI * k / PIXELS) * sin(PI * j / PIXELS);
+        manifold->z[index] = (int) r * cos(PI * j / PIXELS);
         }
     }
 
-    return manifold;
+    return;
 }
 
 
 
 
-Manifold torus_init(Manifold manifold, float radiusInner, float radiusOuter) {
+void torus_init(Manifold* manifold, float radiusInner, float radiusOuter) {
 
     int Rinner = radiusInner * 25;
     int Router = radiusOuter * 50;
@@ -124,13 +124,13 @@ Manifold torus_init(Manifold manifold, float radiusInner, float radiusOuter) {
         for(int k = 0; k < PIXELS; k++) {
         index = j * PIXELS + k;  
 
-        manifold.x[index] = (int) (Router + Rinner * cos(twoPI * k / PIXELS)) * sin(twoPI * j / PIXELS);
-        manifold.y[index] = (int) (Router + Rinner * cos(twoPI * k / PIXELS)) * cos(twoPI * j / PIXELS);
-        manifold.z[index] = (int) Rinner * sin(twoPI * k / PIXELS);
+        manifold->x[index] = (int) (Router + Rinner * cos(twoPI * k / PIXELS)) * sin(twoPI * j / PIXELS);
+        manifold->y[index] = (int) (Router + Rinner * cos(twoPI * k / PIXELS)) * cos(twoPI * j / PIXELS);
+        manifold->z[index] = (int) Rinner * sin(twoPI * k / PIXELS);
         }
     }
 
-    return manifold;
+    return;
 }
 
 
@@ -222,7 +222,7 @@ void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yof
 
 
 
-void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset, int precision) { 
+void torus_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yoffset, int precision) { 
 
     int index = 0;
     int adaskrasa = 0;
@@ -263,22 +263,20 @@ void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoff
 
             adaskrasa = 255 - (196 * (1 - melnums)); 
 
-            vertex1.x = manifold.x[index];
-            vertex1.y = manifold.y[index];
-            vertex2.x = manifold.x[index + 1];
-            vertex2.y = manifold.y[index + 1];
-            vertexU1.x = manifold.x[index + PIXELS];
-            vertexU1.y = manifold.y[index + PIXELS];
-            vertexU2.x = manifold.x[index + PIXELS + 1];
-            vertexU2.y = manifold.y[index + PIXELS + 1];
+            vertex1.x = manifold->x[index];
+            vertex1.y = manifold->y[index];
+            vertex2.x = manifold->x[index + 1];
+            vertex2.y = manifold->y[index + 1];
+            vertexU1.x = manifold->x[index + PIXELS];
+            vertexU1.y = manifold->y[index + PIXELS];
+            vertexU2.x = manifold->x[index + PIXELS + 1];
+            vertexU2.y = manifold->y[index + PIXELS + 1];
 
             fillTriangle(renderer, vertex1, vertex2, vertexU1, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
             fillTriangle(renderer, vertex2, vertexU1, vertexU2, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
             
         }
     }
-
-    printf("ADA IR %d\n", adaskrasa);
 
     // SDL_RenderPresent(renderer);
     return;
@@ -287,7 +285,7 @@ void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoff
 
 
 
-Manifold M_rotate(Manifold manifold, float rad, char axis) {
+void M_rotate(Manifold* manifold, float rad, char axis) {
     float X = 0;
     float Y = 0;
     float Z = 0;
@@ -298,13 +296,13 @@ Manifold M_rotate(Manifold manifold, float rad, char axis) {
             for(int j = 0; j < PIXELS; j++) {
                 for(int k = 0; k < PIXELS; k++) {
                     index = j * PIXELS + k;
-                    X = manifold.x[index];
-                    Y = manifold.y[index];
-                    Z = manifold.z[index];
+                    X = manifold->x[index];
+                    Y = manifold->y[index];
+                    Z = manifold->z[index];
 
-                    manifold.x[index] = X;
-                    manifold.y[index] = Y * cos(rad) - Z * sin(rad);
-                    manifold.z[index] = Y * sin(rad) + Z * cos(rad);
+                    manifold->x[index] = X;
+                    manifold->y[index] = Y * cos(rad) - Z * sin(rad);
+                    manifold->z[index] = Y * sin(rad) + Z * cos(rad);
                 }
             }
         break;
@@ -313,13 +311,13 @@ Manifold M_rotate(Manifold manifold, float rad, char axis) {
             for(int j = 0; j < PIXELS; j++) {
                 for(int k = 0; k < PIXELS; k++) {
                     index = j * PIXELS + k;
-                    X = manifold.x[index];
-                    Y = manifold.y[index];
-                    Z = manifold.z[index];
+                    X = manifold->x[index];
+                    Y = manifold->y[index];
+                    Z = manifold->z[index];
 
-                    manifold.x[index] = X * cos(rad) + Z * sin(rad);
-                    manifold.y[index] = Y;
-                    manifold.z[index] = -X * sin(rad) + Z * cos(rad);
+                    manifold->x[index] = X * cos(rad) + Z * sin(rad);
+                    manifold->y[index] = Y;
+                    manifold->z[index] = -X * sin(rad) + Z * cos(rad);
                 }   
             }
         break;
@@ -327,14 +325,14 @@ Manifold M_rotate(Manifold manifold, float rad, char axis) {
         case 'z':
             for(int j = 0; j < PIXELS; j++) {
                 for(int k = 0; k < PIXELS; k++) {
-                    X = manifold.x[index];
-                    Y = manifold.y[index];
-                    Z = manifold.z[index];
+                    X = manifold->x[index];
+                    Y = manifold->y[index];
+                    Z = manifold->z[index];
                     index = j * PIXELS + k;
 
-                    manifold.x[index] = X * cos(rad) - Y * sin(rad);
-                    manifold.y[index] = X * sin(rad) + Y * cos(rad);
-                    manifold.z[index] = Z;
+                    manifold->x[index] = X * cos(rad) - Y * sin(rad);
+                    manifold->y[index] = X * sin(rad) + Y * cos(rad);
+                    manifold->z[index] = Z;
                 }   
             }
         break;
@@ -342,7 +340,7 @@ Manifold M_rotate(Manifold manifold, float rad, char axis) {
         break;
     }
 
-    return manifold;
+    return;
 }
 
 

@@ -73,7 +73,7 @@ typedef struct{
 SDL_Renderer* SDL_INIT(SDL_Window** window, const char* name, int width, int height);
 
 
-Manifold get_space(Manifold manifold);
+void get_space(Manifold* manifold);
 
 
 Vector3 normal(Vector3 vector1, Vector3 vector2);
@@ -85,10 +85,10 @@ Vector3 unit(Vector3 vector);
 float dotproduct(Vector3 vector1, Vector3 vector2);
 
 
-Manifold sphere_init(Manifold manifold, float radius);
+void sphere_init(Manifold* manifold, float radius);
 
 
-Manifold torus_init(Manifold manifold, float Rinner, float Router);
+void torus_init(Manifold* manifold, float Rinner, float Router);
 
 
 void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G, int B, int Xoffset, int Yoffset);
@@ -100,10 +100,10 @@ void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vect
 void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset);
 
 
-void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset, int precision);
+void torus_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yoffset, int precision);
 
 
-Manifold M_rotate(Manifold manifold, float rad, char axis);
+void M_rotate(Manifold* manifold, float rad, char axis);
 
 
 #endif 
