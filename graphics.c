@@ -126,8 +126,6 @@ void torus_init(Manifold* manifold, float radiusInner, float radiusOuter) {
         manifold->y[index] = (int) ((Router + Rinner * cos(twopiOverPixels * k)) * cos(twopiOverPixels * j));
         manifold->z[index] = (int) (Rinner * sin(twopiOverPixels * k));
 
-        printf("%f\n", manifold->x[index]);
-
         }
     }
 
@@ -307,9 +305,9 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
                     Y = manifold->y[index];
                     Z = manifold->z[index];
 
-                    manifold->x[index] = (int) X;
-                    manifold->y[index] = (int) (Y * cosRad - Z * sinRad);
-                    manifold->z[index] = (int) (Y * sinRad + Z * cosRad);
+                    manifold->x[index] = X;
+                    manifold->y[index] = Y * cosRad - Z * sinRad;
+                    manifold->z[index] = Y * sinRad + Z * cosRad;
 
                 }
             }
@@ -323,9 +321,9 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
                     Y = manifold->y[index];
                     Z = manifold->z[index];
 
-                    manifold->x[index] = (int) (X * cosRad + Z * sinRad);
-                    manifold->y[index] = (int) Y;
-                    manifold->z[index] = (int) (-X * sinRad + Z * cosRad);
+                    manifold->x[index] = X * cosRad + Z * sinRad;
+                    manifold->y[index] = Y;
+                    manifold->z[index] = -X * sinRad + Z * cosRad;
                 }   
             }
         break;
@@ -338,9 +336,9 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
                     Z = manifold->z[index];
                     index = j * PIXELS + k;
 
-                    manifold->x[index] = (int) (X * cosRad - Y * sinRad);
-                    manifold->y[index] = (int) (X * sinRad + Y * cosRad);
-                    manifold->z[index] = (int) Z;
+                    manifold->x[index] = X * cosRad - Y * sinRad;
+                    manifold->y[index] = X * sinRad + Y * cosRad;
+                    manifold->z[index] = Z;
                 }   
             }
         break;

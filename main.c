@@ -60,8 +60,6 @@ int main(int argc, char** argv) {
     end = clock();
     cpu_time_used = ((double) (end - start));
     printf("%f miliseconds to init\n\n", cpu_time_used);
-
-    // SDL_RenderDrawPoint(renderer, )
     
 
     double deltaTime = 0;
