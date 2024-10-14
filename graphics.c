@@ -1,4 +1,4 @@
-#include "SDL_GRAPHICS_LIB.h"
+#include "sdl_lib.h"
 
 
 

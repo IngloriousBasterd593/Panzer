@@ -1,6 +1,4 @@
-#include "SDL_GRAPHICS_LIB.h"
-
-// it works!!!?!!??!
+#include "sdl_lib.h"
 
 
 int main(int argc, char** argv) {
