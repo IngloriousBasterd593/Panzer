@@ -145,9 +145,7 @@ void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G
     SDL_SetRenderDrawColor(renderer, R, G, B, 255);
 
     for (int i = 0; i <= (int)s; i++) {
-        SDL_RenderDrawPoint(renderer,
-            (int)(vector1.x + i * cos(theta)) + C_winX + Xoffset,
-            (int)(vector1.y + i * sin(theta)) + C_winY + Yoffset);
+        SDL_RenderDrawPoint(renderer, (int)(vector1.x + i * cos(theta)) + C_winX + Xoffset, (int)(vector1.y + i * sin(theta)) + C_winY + Yoffset);
     }
 
     return;
@@ -176,6 +174,7 @@ void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vect
 
 
 
+/*
 void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset) {
 
     int index = 0;
@@ -218,19 +217,25 @@ void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yof
 
     SDL_RenderPresent(renderer);
     return;
-} 
+}  */
 
 
 
 
-void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset) { 
+void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset, int precision) { 
 
     int index = 0;
+    int adaskrasa = 0;
 
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
     Vector3 lightPerspective = {0, 1, 0};
+
+    Vector2 vertex1;
+    Vector2 vertex2;
+    Vector2 vertexU1;
+    Vector2 vertexU2;
 
     for(int q = 0; q < PIXELS + 1; q++) {
         for(int l = 0; l < PIXELS + 1; l++) {
@@ -256,18 +261,24 @@ void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoff
                 melnums = -melnums;
             } 
 
-            int adaskrasa = 255 - (196 * (1 - melnums)); 
+            adaskrasa = 255 - (196 * (1 - melnums)); 
 
-            Vector2 p1 = {manifold.x[index], manifold.y[index]};
-            Vector2 p2 = {manifold.x[index + 1], manifold.y[index + 1]};
-            Vector2 pC = {manifold.x[index + PIXELS], manifold.y[index + PIXELS]};
-            Vector2 pA = {manifold.x[index + PIXELS + 1], manifold.y[index + PIXELS + 1]};
+            vertex1.x = manifold.x[index];
+            vertex1.y = manifold.y[index];
+            vertex2.x = manifold.x[index + 1];
+            vertex2.y = manifold.y[index + 1];
+            vertexU1.x = manifold.x[index + PIXELS];
+            vertexU1.y = manifold.y[index + PIXELS];
+            vertexU2.x = manifold.x[index + PIXELS + 1];
+            vertexU2.y = manifold.y[index + PIXELS + 1];
 
-            fillTriangle(renderer, p1, p2, pC, 10, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
-            fillTriangle(renderer, p2, p1, pA, 10, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
+            fillTriangle(renderer, vertex1, vertex2, vertexU1, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
+            fillTriangle(renderer, vertex2, vertexU1, vertexU2, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
             
         }
     }
+
+    printf("ADA IR %d\n", adaskrasa);
 
     // SDL_RenderPresent(renderer);
     return;

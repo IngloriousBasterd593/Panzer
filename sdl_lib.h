@@ -35,10 +35,12 @@
 
 #define launadainais 1
 #define PI 3.141592653589793
-#define PIXELS 4       // 50 for 30 fps
+#define PIXELS 50      // 50 for 30 fps
 #define POINTS PIXELS * PIXELS
-#define C_winX 990
-#define C_winY 540
+#define S_WIDTH 1280
+#define S_HEIGHT 720
+#define C_winX S_WIDTH / 2
+#define C_winY S_HEIGHT / 2
 #define MAX_LOOP_LEN 4096
 
 
@@ -98,7 +100,7 @@ void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vect
 void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset);
 
 
-void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset);
+void torus_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset, int precision);
 
 
 Manifold M_rotate(Manifold manifold, float rad, char axis);

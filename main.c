@@ -4,7 +4,7 @@
 int main(int argc, char** argv) {
 
     SDL_Window* window = NULL;
-    SDL_Renderer* renderer = SDL_INIT(&window, "3D", 1980, 1080);
+    SDL_Renderer* renderer = SDL_INIT(&window, "3D", S_WIDTH, S_HEIGHT);
     if(renderer == NULL) {
         perror("renderer null bruh");
         SDL_DestroyWindow(window);
@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     //torus = M_rotate(torus, PI / 6, 'x');
     //torus = M_rotate(torus, PI / 4, 'y');
 
-    torus_draw(renderer, torus, 0, 0);
+    torus_draw(renderer, torus, 0, 0, 10);
     // torus_draw(renderer, torus1, 400, 0);
 
 
@@ -61,10 +61,11 @@ int main(int argc, char** argv) {
     
 
     double deltaTime = 0;
-    float deltaRad = PI / 1440;
+    float deltaRad = PI / 360;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
+    int precision = 15;
 
     int quit = 0;
     SDL_Event e;
@@ -87,7 +88,7 @@ int main(int argc, char** argv) {
         //SDL_RenderPresent(renderer);
 
 
-        torus_draw(renderer, torus, 0, 100 * sin(theta));
+        torus_draw(renderer, torus, 0, 100 * sin(theta), precision);
         // torus_draw(renderer, torus1, 400, 120 * sin(theta));
        
 
