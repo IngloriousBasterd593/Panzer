@@ -84,8 +84,7 @@ Vector3 unit(Vector3 vector) {
 
 
 float dotproduct(Vector3 vector1, Vector3 vector2) {
-    float product = vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
-    return product;
+    return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
 }
 
 
@@ -100,9 +99,9 @@ void sphere_init(Manifold* manifold, float radius) {
         for(int k = 0; k < PIXELS; k++) {
         index = j * PIXELS + k;  
 
-        manifold->x[index] = (int) r * cos(2 * PI * k / PIXELS) * sin(PI * j / PIXELS);
-        manifold->y[index] = (int) r * sin(2 * PI * k / PIXELS) * sin(PI * j / PIXELS);
-        manifold->z[index] = (int) r * cos(PI * j / PIXELS);
+        manifold->x[index] = (int) (r * cos(2 * PI * k / PIXELS) * sin(PI * j / PIXELS));
+        manifold->y[index] = (int) (r * sin(2 * PI * k / PIXELS) * sin(PI * j / PIXELS));
+        manifold->z[index] = (int) (r * cos(PI * j / PIXELS));
         }
     }
 
@@ -117,16 +116,18 @@ void torus_init(Manifold* manifold, float radiusInner, float radiusOuter) {
     int Rinner = radiusInner * 25;
     int Router = radiusOuter * 50;
 
-    double twoPI = 2 * PI;
     int index = 0;
 
     for(int j = 0; j < PIXELS; j++) {
         for(int k = 0; k < PIXELS; k++) {
         index = j * PIXELS + k;  
 
-        manifold->x[index] = (int) (Router + Rinner * cos(twoPI * k / PIXELS)) * sin(twoPI * j / PIXELS);
-        manifold->y[index] = (int) (Router + Rinner * cos(twoPI * k / PIXELS)) * cos(twoPI * j / PIXELS);
-        manifold->z[index] = (int) Rinner * sin(twoPI * k / PIXELS);
+        manifold->x[index] = (int) ((Router + Rinner * cos(twopiOverPixels * k)) * sin(twopiOverPixels * j));
+        manifold->y[index] = (int) ((Router + Rinner * cos(twopiOverPixels * k)) * cos(twopiOverPixels * j));
+        manifold->z[index] = (int) (Rinner * sin(twopiOverPixels * k));
+
+        printf("%f\n", manifold->x[index]);
+
         }
     }
 
@@ -139,13 +140,17 @@ void torus_init(Manifold* manifold, float radiusInner, float radiusOuter) {
 void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G, int B, int Xoffset, int Yoffset) {
     double dx = vector2.x - vector1.x;
     double dy = vector2.y - vector1.y;
+
     float s = sqrt((dx * dx) + (dy * dy));
     double theta = atan2(dy, dx);
 
+    float cosT = (float) cos(theta);
+    float sinT = (float) sin(theta);
+
     SDL_SetRenderDrawColor(renderer, R, G, B, 255);
 
-    for (int i = 0; i <= (int)s; i++) {
-        SDL_RenderDrawPoint(renderer, (int)(vector1.x + i * cos(theta)) + C_winX + Xoffset, (int)(vector1.y + i * sin(theta)) + C_winY + Yoffset);
+    for (int i = 0; i <= (int) s; i++) {
+        SDL_RenderDrawPoint(renderer, (int) (vector1.x + i * cosT) + C_winX + Xoffset, (int) (vector1.y + i * sinT) + C_winY + Yoffset);
     }
 
     return;
@@ -237,21 +242,21 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yof
     Vector2 vertexU1;
     Vector2 vertexU2;
 
-    for(int q = 0; q < PIXELS + 1; q++) {
-        for(int l = 0; l < PIXELS + 1; l++) {
+    for(int q = 0; q < PIXELS; q++) {
+        for(int l = 0; l < PIXELS; l++) {
             index = q * PIXELS + l;
 
             if(index + PIXELS > POINTS) {
                 continue;
             }
 
-            v1.x = -(1 + cos(q * PI / PIXELS)) * sin(l * 2 * PI / PIXELS);
-            v1.y = (1 + cos(q * PI / PIXELS)) * cos(l * 2 * PI / PIXELS);
+            v1.x = -(1 + cos(q * piOverPixels)) * sin(l * twopiOverPixels);
+            v1.y = (1 + cos(q * piOverPixels)) * cos(l * twopiOverPixels);
             v1.z = 0;
 
-            v2.x = -sin(q * PI / PIXELS) * cos(l * 2 * PI / PIXELS);
-            v2.y = -sin(q * PI / PIXELS) * sin(l * 2 * PI / PIXELS);
-            v2.z = cos(q * PI / PIXELS); 
+            v2.x = -sin(q * piOverPixels) * cos(l * twopiOverPixels);
+            v2.y = -sin(q * piOverPixels) * sin(l * twopiOverPixels);
+            v2.z = cos(q * piOverPixels); 
 
             Snormal = normal(v1, v2);
             Snormal = unit(Snormal);
@@ -278,7 +283,6 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yof
         }
     }
 
-    // SDL_RenderPresent(renderer);
     return;
 } 
 
@@ -290,6 +294,9 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
     float Y = 0;
     float Z = 0;
 
+    float cosRad = (float) cos(rad);
+    float sinRad = (float) sin(rad);
+
     int index = 0;
     switch(axis) {
         case 'x':
@@ -300,9 +307,10 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
                     Y = manifold->y[index];
                     Z = manifold->z[index];
 
-                    manifold->x[index] = X;
-                    manifold->y[index] = Y * cos(rad) - Z * sin(rad);
-                    manifold->z[index] = Y * sin(rad) + Z * cos(rad);
+                    manifold->x[index] = (int) X;
+                    manifold->y[index] = (int) (Y * cosRad - Z * sinRad);
+                    manifold->z[index] = (int) (Y * sinRad + Z * cosRad);
+
                 }
             }
         break;
@@ -315,9 +323,9 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
                     Y = manifold->y[index];
                     Z = manifold->z[index];
 
-                    manifold->x[index] = X * cos(rad) + Z * sin(rad);
-                    manifold->y[index] = Y;
-                    manifold->z[index] = -X * sin(rad) + Z * cos(rad);
+                    manifold->x[index] = (int) (X * cosRad + Z * sinRad);
+                    manifold->y[index] = (int) Y;
+                    manifold->z[index] = (int) (-X * sinRad + Z * cosRad);
                 }   
             }
         break;
@@ -330,9 +338,9 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
                     Z = manifold->z[index];
                     index = j * PIXELS + k;
 
-                    manifold->x[index] = X * cos(rad) - Y * sin(rad);
-                    manifold->y[index] = X * sin(rad) + Y * cos(rad);
-                    manifold->z[index] = Z;
+                    manifold->x[index] = (int) (X * cosRad - Y * sinRad);
+                    manifold->y[index] = (int) (X * sinRad + Y * cosRad);
+                    manifold->z[index] = (int) Z;
                 }   
             }
         break;

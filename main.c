@@ -60,6 +60,8 @@ int main(int argc, char** argv) {
     end = clock();
     cpu_time_used = ((double) (end - start));
     printf("%f miliseconds to init\n\n", cpu_time_used);
+
+    // SDL_RenderDrawPoint(renderer, )
     
 
     double deltaTime = 0;
@@ -100,6 +102,8 @@ int main(int argc, char** argv) {
         M_rotate(&torus, deltaRad, 'x');
         M_rotate(&torus, deltaRad, 'y');
 
+
+
         // torus1 = M_rotate(torus1, deltaRad, 'x');
         // torus1 = M_rotate(torus1, deltaRad, 'y');
                
@@ -107,7 +111,7 @@ int main(int argc, char** argv) {
         theta += 3 * deltaRad;
         Rad += deltaRad;
 
-        //usleep(50000); 
+        // usleep(50000); 
 
         end = clock();
 

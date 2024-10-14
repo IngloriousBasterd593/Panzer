@@ -33,10 +33,18 @@
 
 // macros
 
-#define launadainais 1
 #define PI 3.141592653589793
-#define PIXELS 50      // 50 for 30 fps
+#define TWOPI 2 * PI
+#define twopiOverPixels TWOPI / PIXELS
+#define PIXELS 50     
 #define POINTS PIXELS * PIXELS
+#define twopiOverPixels TWOPI / PIXELS
+#define piOverPixels PI / PIXELS
+
+#define launadainais 1
+
+
+
 #define S_WIDTH 1280
 #define S_HEIGHT 720
 #define C_winX S_WIDTH / 2
