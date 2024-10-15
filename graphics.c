@@ -99,7 +99,7 @@ float dotproduct(Vector3 vector1, Vector3 vector2) {
 
 
 
-void sphere_init(Manifold* manifold, float radius) {
+void sphere_init(Manifold* manifold, SurfaceNormals* manifoldNormals, float radius) {
     
     int r = radius * 25;
     int index = 0;
@@ -111,6 +111,14 @@ void sphere_init(Manifold* manifold, float radius) {
         manifold->x[index] = (int) (r * cos(twopiOverPixels * k) * sin(piOverPixels * j));
         manifold->y[index] = (int) (r * sin(twopiOverPixels * k) * sin(piOverPixels * j));
         manifold->z[index] = (int) (r * cos(piOverPixels * j));
+        
+        manifoldNormals->u[index].x = -sin(j * twopiOverPixels) * sin(k * piOverPixels);
+        manifoldNormals->u[index].y = cos(j * twopiOverPixels) * sin(k * piOverPixels);
+        manifoldNormals->u[index].z = 0;
+
+        manifoldNormals->u[index].x = cos(j * twopiOverPixels) * cos(k * piOverPixels);
+        manifoldNormals->u[index].y = sin(j * twopiOverPixels) * sin(k * piOverPixels);
+        manifoldNormals->u[index].z = -sin(k * piOverPixels);
         }
     }
 
@@ -187,7 +195,20 @@ void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vect
 
 
 
-void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yoffset, int precision) {
+void fillRectangle(SDL_Renderer* renderer, Vector2 vertexA, Vector2 vertexB, Vector2 vertexC, Vector2 vertexD, float precision, int R, int G, int B) {
+
+
+
+
+
+
+    return;
+}
+
+
+
+
+void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, SurfaceNormals* manifoldNormals, int Xoffset, int Yoffset, int precision) {
 
     int index = 0;
     int adaskrasa = 0;
@@ -196,7 +217,7 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yo
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
-    Vector3 lightPerspective = {0, 1, 0};
+    Vector3 lightPerspective = {1, 0, 0};
 
     Vector2 vertex1;
     Vector2 vertex2;
@@ -209,11 +230,14 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yo
 
             if(index + PIXELS > POINTS) {
                 continue;
-            } 
+            }   // broken
+
+            /*
 
             v1.x = -sin(l * twopiOverPixels) * sin(q * piOverPixels);
             v1.y = cos(l * twopiOverPixels) * sin(q * piOverPixels);
             v1.z = 0;
+
             v2.x = cos(l * twopiOverPixels) * cos(q * piOverPixels);
             v2.y = sin(l * twopiOverPixels) * sin(q * piOverPixels);
             v2.z = -sin(q * piOverPixels);
@@ -223,7 +247,17 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yo
 
             melnums = dotproduct(Snormal, lightPerspective);
 
-            adaskrasa = (255 - (126 * (1 - melnums))); 
+            adaskrasa = (255 - (126 * (1 - melnums))); */
+
+            v1 = manifoldNormals->u[index];
+            v2 = manifoldNormals->v[index];
+
+            Snormal = normal(v1, v2);
+            Snormal = unit(Snormal);
+
+            melnums = dotproduct(Snormal, lightPerspective);
+
+            adaskrasa = (255 - (126 * (1 - melnums)));
 
             vertex1.x = manifold->y[index];
             vertex1.y = manifold->z[index];
@@ -235,7 +269,7 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yo
             vertexU1.y = manifold->z[index + PIXELS];
 
             vertexU2.x = manifold->y[index + PIXELS + 1];
-            vertexU2.y = manifold->z[index + PIXELS + 1];
+            vertexU2.y = manifold->z[index + PIXELS + 1];   // out of bounds - salabot
 
             fillTriangle(renderer, vertex1, vertex2, vertexU1, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
             fillTriangle(renderer, vertex2, vertexU1, vertexU2, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
@@ -274,7 +308,7 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float 
 
             if(index + PIXELS > POINTS) {
                 continue;
-            } 
+            }   // broken
 
             v1.x =  ((Router + Rinner * cos(twopiOverPixels * l)) * cos(twopiOverPixels * q));
             v1.y =  (-(Router + Rinner * cos(twopiOverPixels * l)) * sin(twopiOverPixels * q));
@@ -289,7 +323,7 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float 
 
             melnums = dotproduct(Snormal, lightPerspective);
 
-            adaskrasa = (255 - (126 * (1 - melnums))); 
+            adaskrasa = (255 - (62 * (1 - melnums))); 
 
             vertex1.x = manifold->x[index];
             vertex1.y = manifold->y[index];
@@ -301,7 +335,7 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float 
             vertexU1.y = manifold->y[index + PIXELS];
 
             vertexU2.x = manifold->x[index + PIXELS + 1];
-            vertexU2.y = manifold->y[index + PIXELS + 1];
+            vertexU2.y = manifold->y[index + PIXELS + 1];   // out of bounds - salabot
 
             fillTriangle(renderer, vertex1, vertex2, vertexU1, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
             fillTriangle(renderer, vertex2, vertexU1, vertexU2, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
@@ -376,5 +410,104 @@ void M_rotate(Manifold* manifold, float rad, char axis) {
 
     return;
 }
+
+
+
+
+void V_rotate(SurfaceNormals* manifoldNormals, float rad, char axis) {
+
+    float X = 0;
+    float Y = 0;
+    float Z = 0;
+
+    float cosRad = (float) cos(rad);
+    float sinRad = (float) sin(rad);
+
+    int index = 0;
+    switch(axis) {
+        case 'x':
+            for(int j = 0; j < PIXELS; j++) {
+                for(int k = 0; k < PIXELS; k++) {
+                    index = j * PIXELS + k;
+
+                    X = manifoldNormals->u[index].x;
+                    Y = manifoldNormals->u[index].y;
+                    Z = manifoldNormals->u[index].z;
+
+                    manifoldNormals->u[index].x = X;
+                    manifoldNormals->u[index].y = Y * cosRad - Z * sinRad;
+                    manifoldNormals->u[index].z = Y * sinRad + Z * cosRad;
+
+                    X = manifoldNormals->v[index].x;
+                    Y = manifoldNormals->v[index].y;
+                    Z = manifoldNormals->v[index].z;
+
+                    manifoldNormals->v[index].x = X;
+                    manifoldNormals->v[index].y = Y * cosRad - Z * sinRad;
+                    manifoldNormals->v[index].z = Y * sinRad + Z * cosRad;
+
+                }
+            }
+        break;
+
+        case 'y':
+            for(int j = 0; j < PIXELS; j++) {
+                for(int k = 0; k < PIXELS; k++) {
+                    index = j * PIXELS + k;
+
+                    X = manifoldNormals->u[index].x;
+                    Y = manifoldNormals->u[index].y;
+                    Z = manifoldNormals->u[index].z;
+
+                    manifoldNormals->u[index].x = X * cosRad + Z * sinRad;
+                    manifoldNormals->u[index].y = Y;
+                    manifoldNormals->u[index].z = -X * sinRad + Z * cosRad;
+
+                    X = manifoldNormals->v[index].x;
+                    Y = manifoldNormals->v[index].y;
+                    Z = manifoldNormals->v[index].z;
+
+                    manifoldNormals->v[index].x = X * cosRad + Z * sinRad;
+                    manifoldNormals->v[index].y = Y;
+                    manifoldNormals->v[index].z = -X * sinRad + Z * cosRad;
+
+                }   
+            }
+        break;
+
+        case 'z':
+            for(int j = 0; j < PIXELS; j++) {
+                for(int k = 0; k < PIXELS; k++) {
+                    
+                    X = manifoldNormals->u[index].x;
+                    Y = manifoldNormals->u[index].y;
+                    Z = manifoldNormals->u[index].z;
+
+                    manifoldNormals->u[index].x = X * cosRad - Y * sinRad;
+                    manifoldNormals->u[index].y = X * sinRad + Y * cosRad;
+                    manifoldNormals->u[index].z = Z;
+
+                    X = manifoldNormals->v[index].x;
+                    Y = manifoldNormals->v[index].y;
+                    Z = manifoldNormals->v[index].z;
+
+                    manifoldNormals->v[index].x = X * cosRad - Y * sinRad;
+                    manifoldNormals->v[index].y = X * sinRad + Y * cosRad;
+                    manifoldNormals->v[index].z = Z;
+
+                }   
+            }
+        break;
+
+        default:
+        break;
+    }
+
+    return;
+}
+
+
+
+
 
 

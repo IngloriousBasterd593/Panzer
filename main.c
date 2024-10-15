@@ -55,14 +55,16 @@ int main(int argc, char** argv) {
     Manifold torus;
     Manifold sphere;
 
+    SurfaceNormals sphereNormals;
+
     get_space(&torus); 
     get_space(&sphere); 
   
-    sphere_init(&sphere, 7);
+    sphere_init(&sphere, &sphereNormals, 6);
     // torus_init(&torus, 2.5, 2);
 
     // torus_draw(renderer, &torus, 2.5, 2, 0, 0, 10);
-    sphere_draw(renderer, &sphere, 0, 0, 10);
+    sphere_draw(renderer, &sphere, &sphereNormals, 0, 0, 10);
 
 
     end = clock();
@@ -71,11 +73,13 @@ int main(int argc, char** argv) {
     
 
     double deltaTime = 0;
-    float deltaRad = PI / 15;
+    float deltaRad = twopiOverPixels / 12;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int precision = 6;
+    int precision = 25;
+    // long iterations = 0;
+
 
     int quit = 0;
     SDL_Event e;
@@ -99,12 +103,16 @@ int main(int argc, char** argv) {
 
 
         // torus_draw(renderer, &torus, 2.5, 2, 2, 100 * sin(theta), precision);
-        sphere_draw(renderer, &sphere, 0, 0, precision);
+        sphere_draw(renderer, &sphere, &sphereNormals, 0, 0, precision);
        
 
         SDL_RenderPresent(renderer);
 
         M_rotate(&sphere, deltaRad, 'y');
+        M_rotate(&sphere, deltaRad, 'x');
+
+        V_rotate(&sphereNormals, deltaRad, 'y');
+        V_rotate(&sphereNormals, deltaRad, 'x');
 
 
         // M_rotate(&torus, deltaRad, 'x');
@@ -113,13 +121,14 @@ int main(int argc, char** argv) {
 
         theta += 3 * deltaRad;
         Rad += deltaRad;
-
-        // usleep(50000); 
+       
 
         end = clock();
 
         cpu_time_used = ((double) (end - start));
-        printf("%4.0f FPS\n", 1000 / cpu_time_used); 
+        printf("%4.0f FPS\n", 1000 / cpu_time_used);  
+
+        
 
     
     }

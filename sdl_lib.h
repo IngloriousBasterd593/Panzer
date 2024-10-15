@@ -36,15 +36,11 @@
 #define PI 3.141592653589793
 #define TWOPI 2 * PI
 #define twopiOverPixels TWOPI / PIXELS
-#define PIXELS 100     
+#define PIXELS 30       // 25 pixels - 35 precision     
 #define POINTS PIXELS * PIXELS
 #define twopiOverPixels TWOPI / PIXELS
 #define piOverPixels PI / PIXELS
-
 #define launadainais 1
-
-
-
 #define S_WIDTH 1280
 #define S_HEIGHT 720
 #define C_winX S_WIDTH / 2
@@ -74,6 +70,12 @@ typedef struct{
 } Manifold;
 
 
+typedef struct{
+    Vector3* u[POINTS];
+    Vector3* v[POINTS];
+} SurfaceNormals;
+
+
 
 // function prototypes 
 
@@ -93,7 +95,7 @@ Vector3 unit(Vector3 vector);
 float dotproduct(Vector3 vector1, Vector3 vector2);
 
 
-void sphere_init(Manifold* manifold, float radius);
+void sphere_init(Manifold* manifold, SurfaceNormals* manifoldNormals, float radius);
 
 
 void torus_init(Manifold* manifold, float Rinner, float Router);
@@ -105,13 +107,16 @@ void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G
 void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vector2 vertexC, float precision, int R, int G, int B, int Xoffset, int Yoffset);
 
 
-void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yoffset, int precision);
+void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, SurfaceNormals* manifoldNormals, int Xoffset, int Yoffset, int precision);
 
 
 void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float Router, int Xoffset, int Yoffset, int precision);
 
 
 void M_rotate(Manifold* manifold, float rad, char axis);
+
+
+void V_rotate(SurfaceNormals* manifoldNormals, float rad, char axis);
 
 
 #endif 
