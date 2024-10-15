@@ -61,11 +61,14 @@ void get_space(Manifold* manifold) {
 
 
 Vector3 normal(Vector3 vector1, Vector3 vector2) {
-    Vector3 normal;
-    normal.x = vector1.y * vector2.z - vector1.z * vector2.y;
-    normal.y = vector1.z * vector2.x - vector1.x * vector2.z;
-    normal.z = vector1.x * vector2.y - vector1.y * vector2.x;
-    return normal;
+
+    Vector3 Vnormal;
+
+    Vnormal.x = vector1.y * vector2.z - vector1.z * vector2.y;
+    Vnormal.y = vector1.z * vector2.x - vector1.x * vector2.z;
+    Vnormal.z = vector1.x * vector2.y - vector1.y * vector2.x;
+
+    return Vnormal;
 }
 
 
@@ -73,9 +76,15 @@ Vector3 normal(Vector3 vector1, Vector3 vector2) {
 
 Vector3 unit(Vector3 vector) {
     float magnitude = sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
-    vector.x = vector.x / magnitude;
-    vector.y = vector.y / magnitude;
-    vector.z = vector.z / magnitude;
+
+    if(magnitude == 0) {
+        // perror("divided by zero kys");
+        return vector;
+    }
+
+    vector.x /= magnitude;
+    vector.y /= magnitude;
+    vector.z /= magnitude;
 
     return vector;
 }
@@ -225,15 +234,19 @@ void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yof
 
 
 
-void torus_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yoffset, int precision) { 
+void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float Router, int Xoffset, int Yoffset, int precision) { 
 
     int index = 0;
     int adaskrasa = 0;
+    float melnums = 0;
+
+    Rinner = Rinner * 25;
+    Router = Router * 50;
 
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
-    Vector3 lightPerspective = {0, 1, 0};
+    Vector3 lightPerspective = {0, 0, 1};
 
     Vector2 vertex1;
     Vector2 vertex2;
@@ -246,25 +259,26 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yof
 
             if(index + PIXELS > POINTS) {
                 continue;
-            }
+            } // abs()
 
-            v1.x = -(1 + cos(q * piOverPixels)) * sin(l * twopiOverPixels);
-            v1.y = (1 + cos(q * piOverPixels)) * cos(l * twopiOverPixels);
-            v1.z = 0;
+            v1.x = (int) ((Router + Rinner * cos(twopiOverPixels * l)) * cos(twopiOverPixels * q));
+            v1.y = (int) (-(Router + Rinner * cos(twopiOverPixels * l)) * sin(twopiOverPixels * q));
+            v1.z = 0;  
 
-            v2.x = -sin(q * piOverPixels) * cos(l * twopiOverPixels);
-            v2.y = -sin(q * piOverPixels) * sin(l * twopiOverPixels);
-            v2.z = cos(q * piOverPixels); 
+            v2.x = (int) (-Rinner * sin(twopiOverPixels * l) * sin(twopiOverPixels * q));
+            v2.y = (int) (-Rinner * sin(twopiOverPixels * l) * cos(twopiOverPixels * q));
+            v2.z = (int) (Rinner * cos(twopiOverPixels * l));
 
             Snormal = normal(v1, v2);
             Snormal = unit(Snormal);
-            float melnums = dotproduct(Snormal, lightPerspective);
+            melnums = dotproduct(Snormal, lightPerspective);
 
-            if(melnums < 0) {
-                melnums = -melnums;
-            } 
+            printf("%f\n", melnums);
+            usleep(100000);
 
-            adaskrasa = 255 - (128 * (1 - melnums)); 
+            adaskrasa = (255 - (160 * (1 - melnums))); 
+
+            
 
             vertex1.x = manifold->x[index];
             vertex1.y = manifold->y[index];

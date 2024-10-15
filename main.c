@@ -1,6 +1,5 @@
 #include "sdl_lib.h"
 
-// please
 
 
 int main(int argc, char** argv) {
@@ -27,6 +26,22 @@ int main(int argc, char** argv) {
 
     SDL_RenderPresent(renderer); */
 
+    /*
+    Vector3 vec1 = {1, 1, 1};
+    Vector3 vec2 = {3, 2, 8};
+    vec1 = unit(vec1);
+    vec2 = unit(vec2);
+
+    Vector3 vector = normal(vec1, vec2);
+
+    printf("%f\n", vector.x);
+
+
+    usleep(1000000000); */
+
+
+
+
 
 
 
@@ -40,23 +55,11 @@ int main(int argc, char** argv) {
     Manifold torus;
 
     get_space(&torus); 
-    // Manifold torus1 = get_space(torus1);
+
   
     torus_init(&torus, 2.5, 2);
-    // torus1 = torus_init(torus, 3, 2);
- 
 
-    //torus = M_rotate(torus, PI / 6, 'x');
-    //torus = M_rotate(torus, PI / 4, 'y');
-
-    torus_draw(renderer, &torus, 0, 0, 10);
-    // torus_draw(renderer, torus1, 400, 0);
-
-
-    
-    //sphere_init(sphere, 4);
-    //draw(renderer, sphere, 0, 0); 
-
+    torus_draw(renderer, &torus, 2.5, 2, 0, 0, 10);
 
 
     end = clock();
@@ -65,11 +68,11 @@ int main(int argc, char** argv) {
     
 
     double deltaTime = 0;
-    float deltaRad = PI / 360;
+    float deltaRad = PI / 180;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int precision = 15;
+    int precision = 10;
 
     int quit = 0;
     SDL_Event e;
@@ -92,8 +95,7 @@ int main(int argc, char** argv) {
         //SDL_RenderPresent(renderer);
 
 
-        torus_draw(renderer, &torus, 0, 100 * sin(theta), precision);
-        // torus_draw(renderer, torus1, 400, 120 * sin(theta));
+        torus_draw(renderer, &torus, 0, 2.5, 2, 100 * sin(theta), precision);
        
 
         SDL_RenderPresent(renderer);
@@ -101,11 +103,6 @@ int main(int argc, char** argv) {
 
         M_rotate(&torus, deltaRad, 'x');
         M_rotate(&torus, deltaRad, 'y');
-
-
-
-        // torus1 = M_rotate(torus1, deltaRad, 'x');
-        // torus1 = M_rotate(torus1, deltaRad, 'y');
                
 
         theta += 3 * deltaRad;
@@ -119,11 +116,8 @@ int main(int argc, char** argv) {
         printf("%4.0f FPS\n", 1000 / cpu_time_used); 
 
     
-
-    
-        
-
     }
+
 
     free(torus.x);
     free(torus.y);

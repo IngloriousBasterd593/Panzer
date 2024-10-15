@@ -4,3 +4,4 @@ gcc main.c graphics.c -IC:\sdl2\include\SDL2 -LC:\sdl2\lib -g -ggdb -lmingw32 -l
 cd "build/win"
 .\main
 
+
