@@ -89,7 +89,7 @@ float dotproduct(Vector3 vector1, Vector3 vector2) {
 
 
 
-
+/*
 void sphere_init(Manifold* manifold, float radius) {
     
     int r = radius * 25;
@@ -106,7 +106,7 @@ void sphere_init(Manifold* manifold, float radius) {
     }
 
     return;
-}
+}  */
 
 
 
@@ -264,14 +264,17 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yof
                 melnums = -melnums;
             } 
 
-            adaskrasa = 255 - (196 * (1 - melnums)); 
+            adaskrasa = 255 - (128 * (1 - melnums)); 
 
             vertex1.x = manifold->x[index];
             vertex1.y = manifold->y[index];
+
             vertex2.x = manifold->x[index + 1];
             vertex2.y = manifold->y[index + 1];
+
             vertexU1.x = manifold->x[index + PIXELS];
             vertexU1.y = manifold->y[index + PIXELS];
+
             vertexU2.x = manifold->x[index + PIXELS + 1];
             vertexU2.y = manifold->y[index + PIXELS + 1];
 
