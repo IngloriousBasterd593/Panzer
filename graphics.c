@@ -98,7 +98,7 @@ float dotproduct(Vector3 vector1, Vector3 vector2) {
 
 
 
-/*
+
 void sphere_init(Manifold* manifold, float radius) {
     
     int r = radius * 25;
@@ -108,14 +108,14 @@ void sphere_init(Manifold* manifold, float radius) {
         for(int k = 0; k < PIXELS; k++) {
         index = j * PIXELS + k;  
 
-        manifold->x[index] = (int) (r * cos(2 * PI * k / PIXELS) * sin(PI * j / PIXELS));
-        manifold->y[index] = (int) (r * sin(2 * PI * k / PIXELS) * sin(PI * j / PIXELS));
-        manifold->z[index] = (int) (r * cos(PI * j / PIXELS));
+        manifold->x[index] = (int) (r * cos(twopiOverPixels * k) * sin(piOverPixels * j));
+        manifold->y[index] = (int) (r * sin(twopiOverPixels * k) * sin(piOverPixels * j));
+        manifold->z[index] = (int) (r * cos(piOverPixels * j));
         }
     }
 
     return;
-}  */
+}  
 
 
 
@@ -186,50 +186,65 @@ void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vect
 
 
 
-/*
-void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset) {
+
+void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yoffset, int precision) {
 
     int index = 0;
+    int adaskrasa = 0;
+    float melnums = 0;
 
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
-    Vector3 lightPerspective = {1, 0, 0};
+    Vector3 lightPerspective = {0, 1, 0};
+
+    Vector2 vertex1;
+    Vector2 vertex2;
+    Vector2 vertexU1;
+    Vector2 vertexU2;
 
     for(int q = 0; q < PIXELS; q++) {
         for(int l = 0; l < PIXELS; l++) {
             index = q * PIXELS + l;
 
-            v1.x = -sin(l * 2 * PI / PIXELS) * sin(q * PI / PIXELS);
-            v1.y = cos(l * 2 * PI / PIXELS) * sin(q * PI / PIXELS);
+            if(index + PIXELS > POINTS) {
+                continue;
+            } 
+
+            v1.x = -sin(l * twopiOverPixels) * sin(q * piOverPixels);
+            v1.y = cos(l * twopiOverPixels) * sin(q * piOverPixels);
             v1.z = 0;
-            v2.x = cos(l * 2 * PI / PIXELS) * cos(q * PI / PIXELS);
-            v2.y = sin(l * 2 * PI / PIXELS) * sin(q * PI / PIXELS);
-            v2.z = -sin(q * PI / PIXELS);
+            v2.x = cos(l * twopiOverPixels) * cos(q * piOverPixels);
+            v2.y = sin(l * twopiOverPixels) * sin(q * piOverPixels);
+            v2.z = -sin(q * piOverPixels);
 
             Snormal = normal(v1, v2);
             Snormal = unit(Snormal);
-            float melnums = dotproduct(Snormal, lightPerspective);
 
-            if(melnums < 0) {
-                melnums = -melnums;
-            }
+            melnums = dotproduct(Snormal, lightPerspective);
 
-            int adaskrasa = 255 - (196 * (1 - melnums)); 
+            adaskrasa = (255 - (126 * (1 - melnums))); 
 
-            Vector2 p1 = {manifold.x[index], manifold.y[index]};
-            Vector2 p2 = {manifold.x[index + 1], manifold.y[index + 1]};
-            Vector2 pC = {manifold.x[index + PIXELS], manifold.y[index + PIXELS]};
-            Vector2 pA = {manifold.x[index + PIXELS + 1], manifold.y[index + PIXELS + 1]};
+            vertex1.x = manifold->y[index];
+            vertex1.y = manifold->z[index];
 
-            fillTriangle(renderer, p1, p2, pC, 5, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset); // 20 precision
+            vertex2.x = manifold->y[index + 1];
+            vertex2.y = manifold->z[index + 1];
+
+            vertexU1.x = manifold->y[index + PIXELS];
+            vertexU1.y = manifold->z[index + PIXELS];
+
+            vertexU2.x = manifold->y[index + PIXELS + 1];
+            vertexU2.y = manifold->z[index + PIXELS + 1];
+
+            fillTriangle(renderer, vertex1, vertex2, vertexU1, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
+            fillTriangle(renderer, vertex2, vertexU1, vertexU2, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
 
         }
     }
 
-    SDL_RenderPresent(renderer);
     return;
-}  */
+}  
 
 
 
@@ -246,7 +261,7 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float 
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
-    Vector3 lightPerspective = {0, 0, 1};
+    Vector3 lightPerspective = {1, 0, 0};
 
     Vector2 vertex1;
     Vector2 vertex2;
@@ -259,26 +274,22 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float 
 
             if(index + PIXELS > POINTS) {
                 continue;
-            } // abs()
+            } 
 
-            v1.x = (int) ((Router + Rinner * cos(twopiOverPixels * l)) * cos(twopiOverPixels * q));
-            v1.y = (int) (-(Router + Rinner * cos(twopiOverPixels * l)) * sin(twopiOverPixels * q));
+            v1.x =  ((Router + Rinner * cos(twopiOverPixels * l)) * cos(twopiOverPixels * q));
+            v1.y =  (-(Router + Rinner * cos(twopiOverPixels * l)) * sin(twopiOverPixels * q));
             v1.z = 0;  
 
-            v2.x = (int) (-Rinner * sin(twopiOverPixels * l) * sin(twopiOverPixels * q));
-            v2.y = (int) (-Rinner * sin(twopiOverPixels * l) * cos(twopiOverPixels * q));
-            v2.z = (int) (Rinner * cos(twopiOverPixels * l));
+            v2.x =  (-Rinner * sin(twopiOverPixels * l) * cos(twopiOverPixels * q));
+            v2.y =  (-Rinner * sin(twopiOverPixels * l) * sin(twopiOverPixels * q));
+            v2.z =  (Rinner * cos(twopiOverPixels * l));
 
             Snormal = normal(v1, v2);
             Snormal = unit(Snormal);
+
             melnums = dotproduct(Snormal, lightPerspective);
 
-            printf("%f\n", melnums);
-            usleep(100000);
-
-            adaskrasa = (255 - (160 * (1 - melnums))); 
-
-            
+            adaskrasa = (255 - (126 * (1 - melnums))); 
 
             vertex1.x = manifold->x[index];
             vertex1.y = manifold->y[index];

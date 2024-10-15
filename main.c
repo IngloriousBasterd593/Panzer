@@ -53,26 +53,29 @@ int main(int argc, char** argv) {
     start = clock();
 
     Manifold torus;
+    Manifold sphere;
 
     get_space(&torus); 
-
+    get_space(&sphere); 
   
-    torus_init(&torus, 2.5, 2);
+    sphere_init(&sphere, 7);
+    // torus_init(&torus, 2.5, 2);
 
-    torus_draw(renderer, &torus, 2.5, 2, 0, 0, 10);
+    // torus_draw(renderer, &torus, 2.5, 2, 0, 0, 10);
+    sphere_draw(renderer, &sphere, 0, 0, 10);
 
 
     end = clock();
     cpu_time_used = ((double) (end - start));
-    printf("%f miliseconds to init\n\n", cpu_time_used);
+    printf("%f miliseconds to init\n", cpu_time_used);
     
 
     double deltaTime = 0;
-    float deltaRad = PI / 180;
+    float deltaRad = PI / 15;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int precision = 10;
+    int precision = 6;
 
     int quit = 0;
     SDL_Event e;
@@ -95,14 +98,17 @@ int main(int argc, char** argv) {
         //SDL_RenderPresent(renderer);
 
 
-        torus_draw(renderer, &torus, 0, 2.5, 2, 100 * sin(theta), precision);
+        // torus_draw(renderer, &torus, 2.5, 2, 2, 100 * sin(theta), precision);
+        sphere_draw(renderer, &sphere, 0, 0, precision);
        
 
         SDL_RenderPresent(renderer);
 
+        M_rotate(&sphere, deltaRad, 'y');
 
-        M_rotate(&torus, deltaRad, 'x');
-        M_rotate(&torus, deltaRad, 'y');
+
+        // M_rotate(&torus, deltaRad, 'x');
+        // M_rotate(&torus, deltaRad, 'y');
                
 
         theta += 3 * deltaRad;
@@ -122,6 +128,10 @@ int main(int argc, char** argv) {
     free(torus.x);
     free(torus.y);
     free(torus.z);
+
+    free(sphere.x);
+    free(sphere.y);
+    free(sphere.z);
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

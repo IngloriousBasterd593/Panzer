@@ -36,7 +36,7 @@
 #define PI 3.141592653589793
 #define TWOPI 2 * PI
 #define twopiOverPixels TWOPI / PIXELS
-#define PIXELS 10     
+#define PIXELS 100     
 #define POINTS PIXELS * PIXELS
 #define twopiOverPixels TWOPI / PIXELS
 #define piOverPixels PI / PIXELS
@@ -105,7 +105,7 @@ void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G
 void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vector2 vertexC, float precision, int R, int G, int B, int Xoffset, int Yoffset);
 
 
-void sphere_draw(SDL_Renderer* renderer, Manifold manifold, int Xoffset, int Yoffset);
+void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, int Xoffset, int Yoffset, int precision);
 
 
 void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float Router, int Xoffset, int Yoffset, int precision);
