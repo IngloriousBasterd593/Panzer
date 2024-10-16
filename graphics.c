@@ -119,6 +119,8 @@ void sphere_init(Manifold* manifold, SurfaceNormals* manifoldNormals, float radi
         manifoldNormals->u[index].x = cos(j * twopiOverPixels) * cos(k * piOverPixels);
         manifoldNormals->u[index].y = sin(j * twopiOverPixels) * sin(k * piOverPixels);
         manifoldNormals->u[index].z = -sin(k * piOverPixels);
+
+        printf("%f\n", manifoldNormals->u[index].x);
         }
     }
 
@@ -217,7 +219,7 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, SurfaceNormals* man
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
-    Vector3 lightPerspective = {1, 0, 0};
+    Vector3 lightPerspective = {0, 0, 1};
 
     Vector2 vertex1;
     Vector2 vertex2;
@@ -295,7 +297,7 @@ void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float 
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
-    Vector3 lightPerspective = {1, 0, 0};
+    Vector3 lightPerspective = {0, 1, 0};
 
     Vector2 vertex1;
     Vector2 vertex2;

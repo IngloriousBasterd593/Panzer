@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
 
     SDL_RenderPresent(renderer); */
 
-    /*
+    
     Vector3 vec1 = {1, 1, 1};
     Vector3 vec2 = {3, 2, 8};
     vec1 = unit(vec1);
@@ -37,7 +37,12 @@ int main(int argc, char** argv) {
     printf("%f\n", vector.x);
 
 
-    usleep(1000000000); */
+
+
+
+
+
+    usleep(1000000); 
 
 
 
@@ -56,6 +61,15 @@ int main(int argc, char** argv) {
     Manifold sphere;
 
     SurfaceNormals sphereNormals;
+
+    for(int i = 0; i < 100; i++) {
+
+        printf("%f\n", sphereNormals.u[i]);
+
+
+    }
+
+    SDL_Delay(5000);
 
     get_space(&torus); 
     get_space(&sphere); 

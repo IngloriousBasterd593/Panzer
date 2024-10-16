@@ -31,6 +31,7 @@
 
 
 
+
 // macros
 
 #define PI 3.141592653589793
@@ -71,8 +72,8 @@ typedef struct{
 
 
 typedef struct{
-    Vector3* u[POINTS];
-    Vector3* v[POINTS];
+    Vector3 u[POINTS];
+    Vector3 v[POINTS];
 } SurfaceNormals;
 
 
