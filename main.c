@@ -27,22 +27,22 @@ int main(int argc, char** argv) {
     SDL_RenderPresent(renderer); */
 
     
-    Vector3 vec1 = {1, 1, 1};
-    Vector3 vec2 = {3, 2, 8};
-    vec1 = unit(vec1);
-    vec2 = unit(vec2);
+    //Vector3 vec1 = {1, 1, 1};
+    //Vector3 vec2 = {3, 2, 8};
+    //vec1 = unit(vec1);
+    //vec2 = unit(vec2);
 
-    Vector3 vector = normal(vec1, vec2);
+    // Vector3 vector = normal(vec1, vec2);
 
-    printf("%f\n", vector.x);
-
-
+    // printf("%f\n", vector.x);
 
 
 
 
 
-    usleep(1000000); 
+
+
+    // usleep(1000000); 
 
 
 
@@ -62,14 +62,9 @@ int main(int argc, char** argv) {
 
     SurfaceNormals sphereNormals;
 
-    for(int i = 0; i < 100; i++) {
-
-        printf("%f\n", sphereNormals.u[i]);
 
 
-    }
-
-    SDL_Delay(5000);
+    // SDL_Delay(5000);
 
     get_space(&torus); 
     get_space(&sphere); 
@@ -127,6 +122,8 @@ int main(int argc, char** argv) {
 
         V_rotate(&sphereNormals, deltaRad, 'y');
         V_rotate(&sphereNormals, deltaRad, 'x');
+
+        printf("%f\n", sphereNormals.u[0].x);
 
 
         // M_rotate(&torus, deltaRad, 'x');

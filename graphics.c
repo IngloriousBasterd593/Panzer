@@ -120,7 +120,6 @@ void sphere_init(Manifold* manifold, SurfaceNormals* manifoldNormals, float radi
         manifoldNormals->u[index].y = sin(j * twopiOverPixels) * sin(k * piOverPixels);
         manifoldNormals->u[index].z = -sin(k * piOverPixels);
 
-        printf("%f\n", manifoldNormals->u[index].x);
         }
     }
 
@@ -251,8 +250,13 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, SurfaceNormals* man
 
             adaskrasa = (255 - (126 * (1 - melnums))); */
 
-            v1 = manifoldNormals->u[index];
-            v2 = manifoldNormals->v[index];
+            v1.x = manifoldNormals->u[index].x;
+            v1.y = manifoldNormals->u[index].y;
+            v1.z = manifoldNormals->u[index].z;
+
+            v2.x = manifoldNormals->v[index].x;
+            v2.y = manifoldNormals->v[index].y;
+            v2.z = manifoldNormals->v[index].z;
 
             Snormal = normal(v1, v2);
             Snormal = unit(Snormal);
