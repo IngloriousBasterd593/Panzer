@@ -62,15 +62,6 @@ int main(int argc, char** argv) {
 
     SurfaceNormals sphereNormals;
 
-    for(int i = 0; i < 100; i++) {
-
-        printf("%f\n", sphereNormals.u[i]);
-
-
-    }
-
-    SDL_Delay(5000);
-
     get_space(&torus); 
     get_space(&sphere); 
   
@@ -122,11 +113,12 @@ int main(int argc, char** argv) {
 
         SDL_RenderPresent(renderer);
 
-        M_rotate(&sphere, deltaRad, 'y');
-        M_rotate(&sphere, deltaRad, 'x');
+        // M_rotate(&sphere, deltaRad, 'y');
+        // M_rotate(&sphere, deltaRad, 'x');
 
-        V_rotate(&sphereNormals, deltaRad, 'y');
-        V_rotate(&sphereNormals, deltaRad, 'x');
+        // V_rotate(&sphereNormals, deltaRad, 'y');
+        // V_rotate(&sphereNormals, deltaRad, 'x');
+
 
 
         // M_rotate(&torus, deltaRad, 'x');

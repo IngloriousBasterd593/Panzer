@@ -116,11 +116,10 @@ void sphere_init(Manifold* manifold, SurfaceNormals* manifoldNormals, float radi
         manifoldNormals->u[index].y = cos(j * twopiOverPixels) * sin(k * piOverPixels);
         manifoldNormals->u[index].z = 0;
 
-        manifoldNormals->u[index].x = cos(j * twopiOverPixels) * cos(k * piOverPixels);
-        manifoldNormals->u[index].y = sin(j * twopiOverPixels) * sin(k * piOverPixels);
-        manifoldNormals->u[index].z = -sin(k * piOverPixels);
+        manifoldNormals->v[index].x = cos(j * twopiOverPixels) * cos(k * piOverPixels);
+        manifoldNormals->v[index].y = sin(j * twopiOverPixels) * sin(k * piOverPixels);
+        manifoldNormals->v[index].z = -sin(k * piOverPixels);
 
-        printf("%f\n", manifoldNormals->u[index].x);
         }
     }
 
@@ -219,7 +218,7 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, SurfaceNormals* man
     Vector3 Snormal;
     Vector3 v1;
     Vector3 v2;
-    Vector3 lightPerspective = {0, 0, 1};
+    Vector3 lightPerspective = {0, 1, 0};
 
     Vector2 vertex1;
     Vector2 vertex2;
@@ -259,7 +258,9 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, SurfaceNormals* man
 
             melnums = dotproduct(Snormal, lightPerspective);
 
-            adaskrasa = (255 - (126 * (1 - melnums)));
+            melnums = fabs(melnums);
+
+            adaskrasa = (255 - (192 * (1 - melnums)));
 
             vertex1.x = manifold->y[index];
             vertex1.y = manifold->z[index];
