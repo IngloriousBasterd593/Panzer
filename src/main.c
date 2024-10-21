@@ -26,18 +26,24 @@ int main(int argc, char** argv) {
     Manifold torus;
     Manifold sphere;
 
-    Vector3 sphereNormals[POINTS];
+    Vector3 sphereNormals[POINTS] = {0};
 
     get_space(&torus); 
     get_space(&sphere); 
   
     sphere_init(&sphere, sphereNormals, 6);
 
+
+
     sphere_draw(renderer, &sphere, sphereNormals, 0, 0, 10);
+
+    // printf("why slow");
 
     SDL_RenderPresent(renderer);
 
     // sphere_draw(renderer, &sphere, sphereNormals, 0, 0, 10);
+
+
 
 
 
@@ -80,8 +86,8 @@ int main(int argc, char** argv) {
         start = clock();
 
 
-        // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        // SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderClear(renderer);
 
 
 
@@ -105,6 +111,9 @@ int main(int argc, char** argv) {
 
         cpu_time_used = ((double) (end - start));
         printf("%4.0f FPS\n", 1000 / cpu_time_used);  
+
+
+    
 
         
     

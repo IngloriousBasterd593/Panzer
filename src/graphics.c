@@ -111,19 +111,25 @@ void sphere_init(Manifold* manifold, Vector3 manifoldNormals[], float radius) {
         for(int k = 0; k < PIXELS; k++) {
         index = j * PIXELS + k;  
 
-        manifold->x[index] = (r * cos(twopiOverPixels * k) * sin(piOverPixels * j));
-        manifold->y[index] = (r * sin(twopiOverPixels * k) * sin(piOverPixels * j));
-        manifold->z[index] = (r * cos(piOverPixels * j));
-        
-        partialDerivativeU.x = -sin(j * twopiOverPixels) * sin(k * piOverPixels);
-        partialDerivativeU.y = cos(j * twopiOverPixels) * sin(k * piOverPixels);
+        manifold->x[index] = (r * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j));
+        manifold->y[index] = (r * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j));
+        manifold->z[index] = (r * cos(PIOVERPIXELS * j));
+
+        partialDerivativeU.x = -sin(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
+        partialDerivativeU.y = cos(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
         partialDerivativeU.z = 0;
 
-        partialDerivativeV.x = cos(j * twopiOverPixels) * cos(k * piOverPixels);
-        partialDerivativeV.y = sin(j * twopiOverPixels) * sin(k * piOverPixels);
-        partialDerivativeV.z = -sin(k * piOverPixels);
+        partialDerivativeV.x = cos(j * TWOPIOVERPIXELS) * cos(k * PIOVERPIXELS);
+        partialDerivativeV.y = sin(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
+        partialDerivativeV.z = -sin(k * PIOVERPIXELS);
+
 
         manifoldNormals[index] = unit(crossproduct(partialDerivativeU, partialDerivativeV));
+
+        // Vector3 v = crossproduct(partialDerivativeU, partialDerivativeV);
+
+        // printf("magnitude %f\n", sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+
 
         }
     }

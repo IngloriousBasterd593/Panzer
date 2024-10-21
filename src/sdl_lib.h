@@ -30,11 +30,10 @@
 
 #define PI 3.141592653589793
 #define TWOPI 2 * PI
-#define twopiOverPixels TWOPI / PIXELS
-#define PIXELS 100       // 25 pixels - 35 precision     
+#define TWOPIOVERPIXELS TWOPI / PIXELS
+#define PIOVERPIXELS PI / PIXELS
+#define PIXELS 10       // 25 pixels - 35 precision     
 #define POINTS PIXELS * PIXELS
-#define twopiOverPixels TWOPI / PIXELS
-#define piOverPixels PI / PIXELS
 #define launadainais 1
 #define S_WIDTH 1280
 #define S_HEIGHT 720
