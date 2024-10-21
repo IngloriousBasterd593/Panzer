@@ -1,7 +1,6 @@
 #ifndef SDL_GRAPHICS_LIB
 #define SDL_GRAPHICS_LIB
 
-
 // external libs
 
 #include <stdlib.h>
@@ -12,7 +11,9 @@
 #include <time.h>
 
 
-// SDL
+// SDL && OpenGL
+
+#include "C:\glfw-3.4.bin.WIN64\include\GLFW\glfw3.h"   
 
 #define UNITY_BUILD 1             
 #ifdef _WIN64
