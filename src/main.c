@@ -6,6 +6,7 @@ int main(int argc, char** argv) {
 
     SDL_Window* window = NULL;
     SDL_Renderer* renderer = SDL_INIT(&window, "3D", S_WIDTH, S_HEIGHT);
+
     if(renderer == NULL) {
         perror("renderer null bruh");
         SDL_DestroyWindow(window);
@@ -26,32 +27,38 @@ int main(int argc, char** argv) {
     Manifold torus;
     Manifold sphere;
 
-    Vector3 sphereNormals[POINTS] = {0};
+    Vector3 torusNormals[POINTS] = {0};
 
-    get_space(&torus); 
-    get_space(&sphere); 
+    if(get_space(&torus) == 1) {
+        goto exit;
+    }
+
+    if(get_space(&sphere) == 1) {
+        goto exit;
+    }
+
   
-    sphere_init(&sphere, sphereNormals, 6);
+    // sphere_init(&sphere, sphereNormals, 6);
+    torus_init(&torus, torusNormals, 2.5, 2);
 
 
-
-    sphere_draw(renderer, &sphere, sphereNormals, 0, 0, 10);
-
-    // printf("why slow");
-
-    SDL_RenderPresent(renderer);
-
-    // sphere_draw(renderer, &sphere, sphereNormals, 0, 0, 10);
+    // Manifold_rotate(&torus, torusNormals, PI, 'x');
 
 
 
 
 
-
-
-
+    Manifold_draw(renderer, &torus, torusNormals, 0, 0, 20);
 
     
+
+
+
+
+    // Manifold_draw(renderer, &sphere, sphereNormals, 0, 0, 10);
+
+
+    SDL_RenderPresent(renderer);
 
 
 
@@ -65,11 +72,13 @@ int main(int argc, char** argv) {
 
 
     double deltaTime = 0;
-    float deltaRad = PI / 120;
+    float deltaRad = PI / 90;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int trianglePrecision = 10;
+    int trianglePrecision = 20;
+
+
 
     int quit = 0;
     SDL_Event e;
@@ -91,14 +100,20 @@ int main(int argc, char** argv) {
 
 
 
-        sphere_draw(renderer, &sphere, sphereNormals, 0, 0, trianglePrecision);
-
-        SDL_RenderPresent(renderer);
     
 
-       
-        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
+        Manifold_draw(renderer, &torus, torusNormals, 0, 120 * sin(2 * Rad), trianglePrecision);
 
+        SDL_RenderPresent(renderer);
+
+
+
+
+        Manifold_rotate(&torus, torusNormals, deltaRad, 'x');
+        Manifold_rotate(&torus, torusNormals, deltaRad, 'y');
+        Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
+
+      
 
 
 
@@ -127,6 +142,8 @@ int main(int argc, char** argv) {
     free(sphere.x);
     free(sphere.y);
     free(sphere.z);
+
+    exit: 
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

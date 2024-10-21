@@ -30,9 +30,9 @@
 
 #define PI 3.141592653589793
 #define TWOPI 2 * PI
-#define TWOPIOVERPIXELS TWOPI / PIXELS
-#define PIOVERPIXELS PI / PIXELS
-#define PIXELS 10       // 25 pixels - 35 precision     
+#define TWOPIOVERPIXELS TWOPI / (PIXELS - 1)
+#define PIOVERPIXELS PI / (PIXELS - 1)
+#define PIXELS 30       // 25 pixels - 35 precision     
 #define POINTS PIXELS * PIXELS
 #define launadainais 1
 #define S_WIDTH 1280
@@ -71,22 +71,22 @@ typedef struct{
 SDL_Renderer* SDL_INIT(SDL_Window** window, const char* name, int width, int height);
 
 
-void get_space(Manifold* manifold);
+int get_space(Manifold* manifold);
 
 
-Vector3 crossproduct(Vector3 vector1, Vector3 vector2);
+Vector3 crossproduct(Vector3* vector1, Vector3* vector2);
 
 
-Vector3 unit(Vector3 vector);
+Vector3 unit(Vector3* v);
 
 
-float dotproduct(Vector3 vector1, Vector3 vector2);
+float dotproduct(Vector3* vector1, Vector3* vector2);
 
 
 void sphere_init(Manifold* manifold, Vector3 manifoldNormals[], float radius);
 
 
-void torus_init(Manifold* manifold, float Rinner, float Router);
+void torus_init(Manifold* manifold, Vector3 manifoldNormals[], float Rinner, float Router);
 
 
 void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G, int B, int Xoffset, int Yoffset);
@@ -95,10 +95,7 @@ void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G
 void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, float trianglePrecision, int R, int G, int B, int Xoffset, int Yoffset);
 
 
-void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision);
-
-
-void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float Router, int Xoffset, int Yoffset, int trianglePrecision);
+void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision);
 
 
 void Manifold_rotate(Manifold* manifold, Vector3 manifoldNormals[], float rad, char axis);

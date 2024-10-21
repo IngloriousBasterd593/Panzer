@@ -34,39 +34,61 @@ SDL_Renderer* SDL_INIT(SDL_Window** window, const char* name, int width, int hei
 
 
 
-void get_space(Manifold* manifold) {
+int get_space(Manifold* manifold) {
 
     manifold->x = malloc(POINTS * sizeof(float));
     if(manifold->x == NULL) {
         perror("bruh");
-        return;
+        return 1;
     }
 
     manifold->y = malloc(POINTS * sizeof(float));
     if(manifold->y == NULL) {
+        free(manifold->x);
         perror("bruh");
-        return;
+        return 1;
     }
 
     manifold->z = malloc(POINTS * sizeof(float));
     if(manifold->z == NULL) {
+        free(manifold->x);
+        free(manifold->y);
         perror("bruh");
-        return;
+        return 1;
     }
 
-    return;
+    return 0;
 }
 
 
 
 
-Vector3 crossproduct(Vector3 vector1, Vector3 vector2) {
+Vector3 unit(Vector3* v) {
 
+    double magnitude = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+    Vector3 normalized;
+
+    if (magnitude == 0) {
+        normalized.x = normalized.y = normalized.z = 0;
+        return normalized;
+    } 
+
+    normalized.x = v->x / magnitude;
+    normalized.y = v->y / magnitude;
+    normalized.z = v->z / magnitude;
+
+    return normalized;
+}
+
+
+
+
+Vector3 crossproduct(Vector3* vector1, Vector3* vector2) {
     Vector3 Vnormal;
 
-    Vnormal.x = vector1.y * vector2.z - vector1.z * vector2.y;
-    Vnormal.y = vector1.z * vector2.x - vector1.x * vector2.z;
-    Vnormal.z = vector1.x * vector2.y - vector1.y * vector2.x;
+    Vnormal.x = vector1->y * vector2->z - vector1->z * vector2->y;
+    Vnormal.y = vector1->z * vector2->x - vector1->x * vector2->z;
+    Vnormal.z = vector1->x * vector2->y - vector1->y * vector2->x;
 
     return Vnormal;
 }
@@ -74,36 +96,24 @@ Vector3 crossproduct(Vector3 vector1, Vector3 vector2) {
 
 
 
-Vector3 unit(Vector3 vector) {
-    float magnitude = sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
-
-    if(magnitude == 0) {
-        // perror("divided by zero kys");
-        return vector;
-    }
-
-    vector.x /= magnitude;
-    vector.y /= magnitude;
-    vector.z /= magnitude;
-
-    return vector;
-}
-
-
-
-
-float dotproduct(Vector3 vector1, Vector3 vector2) {
-    return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
+float dotproduct(Vector3* vector1, Vector3* vector2) {
+    return vector1->x * vector2->x + vector1->y * vector2->y + vector1->z * vector2->z;
 }
 
 
 
 
 void sphere_init(Manifold* manifold, Vector3 manifoldNormals[], float radius) {
+
+    if(radius <= 0) {
+        perror("bozo");
+        return;
+    }
     
     int r = radius * 25;
     int index = 0;
 
+    Vector3 normalVector;
     Vector3 partialDerivativeU;
     Vector3 partialDerivativeV;
     
@@ -114,22 +124,19 @@ void sphere_init(Manifold* manifold, Vector3 manifoldNormals[], float radius) {
         manifold->x[index] = (r * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j));
         manifold->y[index] = (r * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j));
         manifold->z[index] = (r * cos(PIOVERPIXELS * j));
-
-        partialDerivativeU.x = -sin(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
-        partialDerivativeU.y = cos(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
+        
+        
+        partialDerivativeU.x = -r * sin(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
+        partialDerivativeU.y = r * cos(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
         partialDerivativeU.z = 0;
 
-        partialDerivativeV.x = cos(j * TWOPIOVERPIXELS) * cos(k * PIOVERPIXELS);
-        partialDerivativeV.y = sin(j * TWOPIOVERPIXELS) * sin(k * PIOVERPIXELS);
-        partialDerivativeV.z = -sin(k * PIOVERPIXELS);
+        partialDerivativeV.x = r * cos(j * TWOPIOVERPIXELS) * cos(k * PIOVERPIXELS);
+        partialDerivativeV.y = r * sin(j * TWOPIOVERPIXELS) * cos(k * PIOVERPIXELS);
+        partialDerivativeV.z = -r * sin(k * PIOVERPIXELS);
 
+        normalVector = crossproduct(&partialDerivativeU, &partialDerivativeV);
 
-        manifoldNormals[index] = unit(crossproduct(partialDerivativeU, partialDerivativeV));
-
-        // Vector3 v = crossproduct(partialDerivativeU, partialDerivativeV);
-
-        // printf("magnitude %f\n", sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
-
+        manifoldNormals[index] = unit(&normalVector);
 
         }
     }
@@ -139,27 +146,49 @@ void sphere_init(Manifold* manifold, Vector3 manifoldNormals[], float radius) {
 
 
 
-/*
-void torus_init(Manifold* manifold, float radiusInner, float radiusOuter) {
+
+void torus_init(Manifold* manifold, Vector3 manifoldNormals[], float radiusInner, float radiusOuter) {
+
+    if(radiusInner <= 0 || radiusOuter <= 0) {
+        perror("bozoo");
+        return;
+    }
 
     int Rinner = radiusInner * 25;
     int Router = radiusOuter * 50;
+
+    Vector3 normalVector;
+    Vector3 partialDerivativeU;
+    Vector3 partialDerivativeV;
 
     int index = 0;
 
     for(int j = 0; j < PIXELS; j++) {
         for(int k = 0; k < PIXELS; k++) {
-        index = j * PIXELS + k;  
+        index = j * PIXELS + k; 
 
-        manifold->x[index] = (int) ((Router + Rinner * cos(twopiOverPixels * k)) * sin(twopiOverPixels * j));
-        manifold->y[index] = (int) ((Router + Rinner * cos(twopiOverPixels * k)) * cos(twopiOverPixels * j));
-        manifold->z[index] = (int) (Rinner * sin(twopiOverPixels * k));
+        manifold->x[index] = ((Router + Rinner * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j));
+        manifold->y[index] = ((Router + Rinner * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j));
+        manifold->z[index] = (Rinner * sin(TWOPIOVERPIXELS * k));
+
+
+        partialDerivativeU.x = ((Router + Rinner * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j));
+        partialDerivativeU.y = (-(Router + Rinner * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j));
+        partialDerivativeU.z = 0;
+
+        partialDerivativeV.x = (-Rinner * sin(TWOPIOVERPIXELS * k) * cos(TWOPIOVERPIXELS * j));
+        partialDerivativeV.y = (-Rinner * sin(TWOPIOVERPIXELS * k) * sin(TWOPIOVERPIXELS * j));
+        partialDerivativeV.z = (Rinner * cos(TWOPIOVERPIXELS * k));
+
+        normalVector = crossproduct(&partialDerivativeU, &partialDerivativeV);
+
+        manifoldNormals[index] = unit(&normalVector);
 
         }
     }
 
     return;
-} */
+} 
 
 
 
@@ -201,8 +230,8 @@ void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVerte
         point1.x = baseVertex1.x + t * (centralVertex.x - baseVertex1.x);
         point1.y = baseVertex1.y + t * (centralVertex.y - baseVertex1.y);
 
-        point1.x = baseVertex2.x + t * (centralVertex.x - baseVertex2.x);
-        point1.y = baseVertex2.y + t * (centralVertex.y - baseVertex2.y);
+        point2.x = baseVertex2.x + t * (centralVertex.x - baseVertex2.x);
+        point2.y = baseVertex2.y + t * (centralVertex.y - baseVertex2.y);
 
         line(renderer, point1, point2, R, G, B, Xoffset, Yoffset);
 
@@ -227,13 +256,23 @@ void fillRectangle(SDL_Renderer* renderer, Vector2 vertexA, Vector2 vertexB, Vec
 
 
 
-void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision) {
+void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision) {
 
-    int index = 0;
+    if(trianglePrecision < 1) {
+        perror("you twisted sack of shit");
+        return;
+    }
+
+    int index;
+    int indexPlusPixelsPlusOne;
+    int indexPlusPixels;
+    int indexPlusOne;
+    int nextL;
+    int nextQ;
+
     int grayscaleRGB = 0;
     float grayscaleCoefficient = 0;
 
-    Vector3 surfaceNormalVector;
     Vector3 lightPerspectiveVector = {1, 0, 0};
 
     Vector2 vertex1;
@@ -243,30 +282,30 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNor
 
     for(int q = 0; q < PIXELS; q++) {
         for(int l = 0; l < PIXELS; l++) {
+            
+            nextL = (l + 1) % PIXELS;
+            nextQ = (q + 1) % PIXELS;
+
             index = q * PIXELS + l;
+            indexPlusOne = q * PIXELS + nextL;
+            indexPlusPixels = nextQ * PIXELS + l;
+            indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
 
-            if(index + PIXELS > POINTS) {
-                continue;
-            }   // broken
-
-
-            surfaceNormalVector = manifoldNormals[index];
-
-            grayscaleCoefficient = dotproduct(surfaceNormalVector, lightPerspectiveVector);
+            grayscaleCoefficient = fabs(dotproduct(&manifoldNormals[index], &lightPerspectiveVector));
 
             grayscaleRGB = (255 - (90 * (1 - grayscaleCoefficient)));
 
             vertex1.x = manifold->y[index];
             vertex1.y = manifold->z[index];
 
-            vertex2.x = manifold->y[index + 1];
-            vertex2.y = manifold->z[index + 1];
+            vertex2.x = manifold->y[indexPlusOne];
+            vertex2.y = manifold->z[indexPlusOne];
 
-            vertexUpper1.x = manifold->y[index + PIXELS];
-            vertexUpper1.y = manifold->z[index + PIXELS];
+            vertexUpper1.x = manifold->y[indexPlusPixels];
+            vertexUpper1.y = manifold->z[indexPlusPixels];
 
-            vertexUpper2.x = manifold->y[index + PIXELS + 1];
-            vertexUpper2.y = manifold->z[index + PIXELS + 1];   // out of bounds - salabot
+            vertexUpper2.x = manifold->y[indexPlusPixelsPlusOne];
+            vertexUpper2.y = manifold->z[indexPlusPixelsPlusOne];   
 
             fillTriangle(renderer, vertex1, vertex2, vertexUpper1, trianglePrecision, grayscaleRGB, grayscaleRGB, grayscaleRGB, Xoffset, Yoffset);
             fillTriangle(renderer, vertex2, vertexUpper1, vertexUpper2, trianglePrecision, grayscaleRGB, grayscaleRGB, grayscaleRGB, Xoffset, Yoffset);
@@ -276,73 +315,6 @@ void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNor
 
     return;
 }  
-
-
-
-/*
-void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float Router, int Xoffset, int Yoffset, int precision) { 
-
-    int index = 0;
-    int adaskrasa = 0;
-    float melnums = 0;
-
-    Rinner = Rinner * 25;
-    Router = Router * 50;
-
-    Vector3 Snormal;
-    Vector3 v1;
-    Vector3 v2;
-    Vector3 lightPerspective = {0, 1, 0};
-
-    Vector2 vertex1;
-    Vector2 vertex2;
-    Vector2 vertexU1;
-    Vector2 vertexU2;
-
-    for(int q = 0; q < PIXELS; q++) {
-        for(int l = 0; l < PIXELS; l++) {
-            index = q * PIXELS + l;
-
-            if(index + PIXELS > POINTS) {
-                continue;
-            }   // broken
-
-            v1.x =  ((Router + Rinner * cos(twopiOverPixels * l)) * cos(twopiOverPixels * q));
-            v1.y =  (-(Router + Rinner * cos(twopiOverPixels * l)) * sin(twopiOverPixels * q));
-            v1.z = 0;  
-
-            v2.x =  (-Rinner * sin(twopiOverPixels * l) * cos(twopiOverPixels * q));
-            v2.y =  (-Rinner * sin(twopiOverPixels * l) * sin(twopiOverPixels * q));
-            v2.z =  (Rinner * cos(twopiOverPixels * l));
-
-            Snormal = normal(v1, v2);
-            Snormal = unit(Snormal);
-
-            melnums = fabs(dotproduct(Snormal, lightPerspective));
-            
-
-            adaskrasa = (255 - (62 * (1 - melnums))); 
-
-            vertex1.x = manifold->x[index];
-            vertex1.y = manifold->y[index];
-
-            vertex2.x = manifold->x[index + 1];
-            vertex2.y = manifold->y[index + 1];
-
-            vertexU1.x = manifold->x[index + PIXELS];
-            vertexU1.y = manifold->y[index + PIXELS];
-
-            vertexU2.x = manifold->x[index + PIXELS + 1];
-            vertexU2.y = manifold->y[index + PIXELS + 1];   // out of bounds - salabot
-
-            fillTriangle(renderer, vertex1, vertex2, vertexU1, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
-            fillTriangle(renderer, vertex2, vertexU1, vertexU2, precision, adaskrasa, adaskrasa, adaskrasa, Xoffset, Yoffset);
-            
-        }
-    }
-
-    return;
-} */
 
 
 
