@@ -432,12 +432,3 @@ void Manifold_rotate(Manifold* manifold, Vector3 manifoldNormals[], float rad, c
 
     return;
 }
-
-
-
-
-
-
-
-
-
