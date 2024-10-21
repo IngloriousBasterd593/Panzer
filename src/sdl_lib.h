@@ -22,14 +22,8 @@
  #include <SDL2/SDL.h>
  #include <SDL2/SDL_image.h>
 #endif
-#include "C:\sdl-vscode-c-cpp\common.h"
-#include "C:\sdl-vscode-c-cpp\sdl_utils.h"
-
-
-// SDL addition
-
-
-
+#include "common.h"
+#include "sdl_utils.h"
 
 
 // macros
@@ -37,7 +31,7 @@
 #define PI 3.141592653589793
 #define TWOPI 2 * PI
 #define twopiOverPixels TWOPI / PIXELS
-#define PIXELS 30       // 25 pixels - 35 precision     
+#define PIXELS 100       // 25 pixels - 35 precision     
 #define POINTS PIXELS * PIXELS
 #define twopiOverPixels TWOPI / PIXELS
 #define piOverPixels PI / PIXELS
@@ -71,12 +65,6 @@ typedef struct{
 } Manifold;
 
 
-typedef struct{
-    Vector3 u[POINTS];
-    Vector3 v[POINTS];
-} SurfaceNormals;
-
-
 
 // function prototypes 
 
@@ -87,7 +75,7 @@ SDL_Renderer* SDL_INIT(SDL_Window** window, const char* name, int width, int hei
 void get_space(Manifold* manifold);
 
 
-Vector3 normal(Vector3 vector1, Vector3 vector2);
+Vector3 crossproduct(Vector3 vector1, Vector3 vector2);
 
 
 Vector3 unit(Vector3 vector);
@@ -96,7 +84,7 @@ Vector3 unit(Vector3 vector);
 float dotproduct(Vector3 vector1, Vector3 vector2);
 
 
-void sphere_init(Manifold* manifold, SurfaceNormals* manifoldNormals, float radius);
+void sphere_init(Manifold* manifold, Vector3 manifoldNormals[], float radius);
 
 
 void torus_init(Manifold* manifold, float Rinner, float Router);
@@ -105,19 +93,16 @@ void torus_init(Manifold* manifold, float Rinner, float Router);
 void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G, int B, int Xoffset, int Yoffset);
 
 
-void fillTriangle(SDL_Renderer* renderer, Vector2 vertex1, Vector2 vertex2, Vector2 vertexC, float precision, int R, int G, int B, int Xoffset, int Yoffset);
+void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, float trianglePrecision, int R, int G, int B, int Xoffset, int Yoffset);
 
 
-void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, SurfaceNormals* manifoldNormals, int Xoffset, int Yoffset, int precision);
+void sphere_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision);
 
 
-void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float Router, int Xoffset, int Yoffset, int precision);
+void torus_draw(SDL_Renderer* renderer, Manifold* manifold, float Rinner, float Router, int Xoffset, int Yoffset, int trianglePrecision);
 
 
-void M_rotate(Manifold* manifold, float rad, char axis);
-
-
-void V_rotate(SurfaceNormals* manifoldNormals, float rad, char axis);
+void Manifold_rotate(Manifold* manifold, Vector3 manifoldNormals[], float rad, char axis);
 
 
 #endif 
