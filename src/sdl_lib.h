@@ -3,19 +3,24 @@
 
 // external libs
 
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h> 
 #include <math.h>
 #include <unistd.h>
 #include <time.h>
 
 
-// SDL && OpenGL
+// OpenGL
 
-#include "C:\glfw-3.4.bin.WIN64\include\GLFW\glfw3.h"   
+#include <glad/glad.h>  
+#include <GLFW/glfw3.h>
 
-#define UNITY_BUILD 1             
+
+
+#ifndef UNITY_BUILD
+#define UNITY_BUILD 1
+#endif       
 #ifdef _WIN64
  #include <SDL.h>
  #include <SDL_image.h>
@@ -23,8 +28,6 @@
  #include <SDL2/SDL.h>
  #include <SDL2/SDL_image.h>
 #endif
-#include "common.h"
-#include "sdl_utils.h"
 
 
 // macros
@@ -33,7 +36,7 @@
 #define TWOPI 2 * PI
 #define TWOPIOVERPIXELS TWOPI / (PIXELS - 1)
 #define PIOVERPIXELS PI / (PIXELS - 1)
-#define PIXELS 30       // 25 pixels - 35 precision     
+#define PIXELS 10       // 25 pixels - 35 precision     
 #define POINTS PIXELS * PIXELS
 #define launadainais 1
 #define S_WIDTH 1280
@@ -90,13 +93,16 @@ void sphere_init(Manifold* manifold, Vector3 manifoldNormals[], float radius);
 void torus_init(Manifold* manifold, Vector3 manifoldNormals[], float Rinner, float Router);
 
 
-void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G, int B, int Xoffset, int Yoffset);
+void line(SDL_Renderer* renderer, Vector2 vectorStart, Vector2 vectorEnd, int deltaX, int deltaY, int linePrecision);
 
 
-void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, float trianglePrecision, int R, int G, int B, int Xoffset, int Yoffset);
+void fillRectangle(SDL_Renderer* renderer, Vector2 vertexA, Vector2 vertexB, Vector2 vertexC, Vector2 vertexD, int drawPrecision, int linePrecision, int R, int G, int B, int Xoffset, int Yoffset);
 
 
-void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision);
+void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, int trianglePrecision, int linePrecision, int R, int G, int B, int Xoffset, int Yoffset);
+
+
+void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision, int linePrecision);
 
 
 void Manifold_rotate(Manifold* manifold, Vector3 manifoldNormals[], float rad, char axis);

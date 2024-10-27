@@ -5,6 +5,7 @@
 int main(int argc, char** argv) {
 
     SDL_Window* window = NULL;
+
     SDL_Renderer* renderer = SDL_INIT(&window, "3D", S_WIDTH, S_HEIGHT);
 
     if(renderer == NULL) {
@@ -22,7 +23,7 @@ int main(int argc, char** argv) {
 
 
 
-
+    
 
     Manifold torus;
     Manifold sphere;
@@ -38,27 +39,18 @@ int main(int argc, char** argv) {
     }
 
   
-    // sphere_init(&sphere, sphereNormals, 6);
+  
     torus_init(&torus, torusNormals, 2.5, 2);
 
 
-    // Manifold_rotate(&torus, torusNormals, PI, 'x');
+    Manifold_draw(renderer, &torus, torusNormals, 0, 0, 20, 100);
 
-
-
-
-
-    Manifold_draw(renderer, &torus, torusNormals, 0, 0, 20);
-
-    
-
-
-
-
-    // Manifold_draw(renderer, &sphere, sphereNormals, 0, 0, 10);
 
 
     SDL_RenderPresent(renderer);
+
+
+
 
 
 
@@ -72,11 +64,12 @@ int main(int argc, char** argv) {
 
 
     double deltaTime = 0;
-    float deltaRad = PI / 90;
+    float deltaRad = PI / 720;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int trianglePrecision = 20;
+    int drawPrecision = 1000;
+    int linePrecision = 1000;
 
 
 
@@ -92,7 +85,12 @@ int main(int argc, char** argv) {
             }
         } 
 
+        
         start = clock();
+
+        
+
+        
 
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -100,12 +98,10 @@ int main(int argc, char** argv) {
 
 
 
-    
+        Manifold_draw(renderer, &torus, torusNormals, 0, 120 * sin(2 * Rad), drawPrecision, linePrecision);
 
-        Manifold_draw(renderer, &torus, torusNormals, 0, 120 * sin(2 * Rad), trianglePrecision);
 
         SDL_RenderPresent(renderer);
-
 
 
 
@@ -119,10 +115,12 @@ int main(int argc, char** argv) {
 
         theta += 3 * deltaRad;
         Rad += deltaRad;
-       
+
+
 
 
         end = clock();
+
 
         cpu_time_used = ((double) (end - start));
         printf("%4.0f FPS\n", 1000 / cpu_time_used);  

@@ -193,21 +193,17 @@ void torus_init(Manifold* manifold, Vector3 manifoldNormals[], float radiusInner
 
 
 
-void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G, int B, int Xoffset, int Yoffset) {
+void line(SDL_Renderer* renderer, Vector2 vertexStart, Vector2 vertexEnd, int deltaX, int deltaY, int linePrecision) {
+    // slow
+    float dx = (vertexEnd.x - vertexStart.x) / linePrecision;
+    float dy = (vertexEnd.y - vertexStart.y) / linePrecision;
 
-    double dx = vector2.x - vector1.x;
-    double dy = vector2.y - vector1.y;
+    for (int i = 0; i <= linePrecision; i++) {
 
-    float s = sqrt((dx * dx) + (dy * dy));
-    double theta = atan2(dy, dx);
-
-    float cosT = (float) cos(theta);
-    float sinT = (float) sin(theta);
-
-    SDL_SetRenderDrawColor(renderer, R, G, B, 255);
-
-    for (int i = 0; i <= (int) s; i++) {
-        SDL_RenderDrawPoint(renderer, (int) (vector1.x + i * cosT) + C_winX + Xoffset, (int) (vector1.y + i * sinT) + C_winY + Yoffset);
+        vertexStart.x += dx;
+        vertexStart.y += dy;
+        
+        SDL_RenderDrawPoint(renderer, (int) vertexStart.x + deltaX, (int) vertexStart.y + deltaY);
     }
 
     return;
@@ -216,24 +212,62 @@ void line(SDL_Renderer* renderer, Vector2 vector1, Vector2 vector2, int R, int G
 
 
 
-void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, float trianglePrecision, int R, int G, int B, int Xoffset, int Yoffset) {
+void lineNew(SDL_Renderer* renderer, Vector2 vertexStart, Vector2 vertexEnd, int deltaX, int deltaY) {
 
-    float t = 0;
+    short delta = floor((vertexEnd.y - vertexStart.y) / (vertexEnd.x - vertexStart.x));
+    short stepX = 0;
+    short stepY = 0;
+
+    if(delta < 0) {
+        delta--;
+
+        for(int i = 0; i < vertexEnd.y - vertexStart.y; i++) {
+        SDL_RenderDrawPoint(renderer, stepX + deltaX, stepY + deltaY);
+
+        stepY++;
+        stepY % delta == 0 ? stepX--;
+
+        }
+
+    } else {
+        delta++;
+
+        for(int i = 0; i < vertexEnd.y - vertexStart.y; i++) 
+        SDL_RenderDrawPoint(renderer, stepX + deltaX, stepY + deltaY);  
+
+        stepY++;
+        stepY % delta == 0 ? stepX++;
+
+        }
+
+    return;
+}
+
+
+
+
+void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, int trianglePrecision, int linePrecision, int R, int G, int B, int Xoffset, int Yoffset) {
+
+    int deltaX = C_winX + Xoffset;
+    int deltaY = C_winY + Yoffset;
+
+    float dx1 = (centralVertex.x - baseVertex1.x) / trianglePrecision;
+    float dy1 = (centralVertex.y - baseVertex1.y) / trianglePrecision;
+    float dx2 = (centralVertex.x - baseVertex2.x) / trianglePrecision;
+    float dy2 = (centralVertex.y - baseVertex2.y) / trianglePrecision;
 
     Vector2 point1;
     Vector2 point2;
 
     for (int i = 0; i < trianglePrecision; i++) {
 
-        t = (float)i / trianglePrecision;
+        point1.x = baseVertex1.x + dx1;
+        point1.y = baseVertex1.y + dy1;
 
-        point1.x = baseVertex1.x + t * (centralVertex.x - baseVertex1.x);
-        point1.y = baseVertex1.y + t * (centralVertex.y - baseVertex1.y);
+        point2.x = baseVertex2.x + dx2;
+        point2.y = baseVertex2.y + dy2;
 
-        point2.x = baseVertex2.x + t * (centralVertex.x - baseVertex2.x);
-        point2.y = baseVertex2.y + t * (centralVertex.y - baseVertex2.y);
-
-        line(renderer, point1, point2, R, G, B, Xoffset, Yoffset);
+        line(renderer, point1, point2, deltaX, deltaY, linePrecision);
 
     }
 
@@ -243,12 +277,33 @@ void fillTriangle(SDL_Renderer* renderer, Vector2 baseVertex1, Vector2 baseVerte
 
 
 
-void fillRectangle(SDL_Renderer* renderer, Vector2 vertexA, Vector2 vertexB, Vector2 vertexC, Vector2 vertexD, float drawPrecision, int R, int G, int B) {
+void fillRectangle(SDL_Renderer* renderer, Vector2 vertexA, Vector2 vertexB, Vector2 vertexC, Vector2 vertexD, int drawPrecision, int linePrecision, int R, int G, int B, int Xoffset, int Yoffset) {
 
+    if(drawPrecision <= 0) {
+        perror("rip bozo");
+        return;
+    }
 
+    SDL_SetRenderDrawColor(renderer, R, G, B, 255);
 
+    int deltaX = C_winX + Xoffset;
+    int deltaY = C_winY + Yoffset;
 
+    float dxU = (vertexD.x - vertexC.x) / drawPrecision;
+    float dyU = (vertexD.y - vertexC.y) / drawPrecision;
+    float dxL = (vertexB.x - vertexA.x) / drawPrecision;
+    float dyL = (vertexB.y - vertexA.y) / drawPrecision;
 
+    for(int i = 0; i <= drawPrecision; i++) {
+
+        vertexA.x += dxU;
+        vertexA.y += dyU;
+
+        vertexC.x += dxL;
+        vertexC.y += dyL;
+
+        line(renderer, vertexA, vertexC, deltaX, deltaY, 10);
+    }
 
     return;
 }
@@ -256,9 +311,9 @@ void fillRectangle(SDL_Renderer* renderer, Vector2 vertexA, Vector2 vertexB, Vec
 
 
 
-void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int trianglePrecision) {
+void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldNormals[], int Xoffset, int Yoffset, int drawPrecision, int linePrecision) {
 
-    if(trianglePrecision < 1) {
+    if(drawPrecision < 1) {
         perror("you twisted sack of shit");
         return;
     }
@@ -270,8 +325,8 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldN
     int nextL;
     int nextQ;
 
-    int grayscaleRGB = 0;
-    float grayscaleCoefficient = 0;
+    int grayscaleRGB;
+    float grayscaleCoefficient;
 
     Vector3 lightPerspectiveVector = {1, 0, 0};
 
@@ -307,8 +362,7 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldN
             vertexUpper2.x = manifold->y[indexPlusPixelsPlusOne];
             vertexUpper2.y = manifold->z[indexPlusPixelsPlusOne];   
 
-            fillTriangle(renderer, vertex1, vertex2, vertexUpper1, trianglePrecision, grayscaleRGB, grayscaleRGB, grayscaleRGB, Xoffset, Yoffset);
-            fillTriangle(renderer, vertex2, vertexUpper1, vertexUpper2, trianglePrecision, grayscaleRGB, grayscaleRGB, grayscaleRGB, Xoffset, Yoffset);
+            fillRectangle(renderer, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, linePrecision, grayscaleRGB, grayscaleRGB, grayscaleRGB, Xoffset, Yoffset);
 
         }
     }

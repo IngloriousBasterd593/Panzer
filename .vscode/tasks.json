@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build",  
+        "type": "shell",
+        "command": "gcc", 
+        "args": [
+          "-g",  
+          "${file}",  
+          "-o",  
+          "${fileDirname}/${fileBasenameNoExtension}" ,
+          "-I",
+          "C:/Panzer/glfw-3.4.bin.WIN64/include",
+          "-I",
+          "C:/Panzer/glew-2.1.0/include",
+          "-L",
+          "C:/Panzer/glew-2.1.0/lib/Release/x64",
+          "-L",
+          "C:/Panzer/glfw-3.3.8.bin.WIN64/lib-mingw-w64",
+          "-lglfw3dll",
+          "-lglew32",
+          "-lopengl32",
+          
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true  
+        },
+        "problemMatcher": ["$gcc"],  
+        "detail": "Task for building C files using GCC"
+      }
+    ]
+  }
+  
