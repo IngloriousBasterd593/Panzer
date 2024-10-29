@@ -1,23 +1,22 @@
-#include "sdl_lib.h"
+#include "graphics.h"
 
 
 
 int main(int argc, char** argv) {
 
     SDL_Window* window = NULL;
+    SDL_Texture* texture = NULL;
+    SDL_Renderer* renderer = NULL;
 
-    SDL_Renderer* renderer = SDL_INIT(&window, "3D", S_WIDTH, S_HEIGHT);
-
-    if(renderer == NULL) {
-        perror("renderer null bruh");
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    SDL_init(&window, &renderer, &texture, "3D", S_WIDTH, S_HEIGHT);
 
 
     clock_t start, end;
     double cpu_time_used;
+
+
+
+
 
     start = clock();
 
@@ -28,22 +27,30 @@ int main(int argc, char** argv) {
     Manifold torus;
     Manifold sphere;
 
+    unsigned int* frameColors = NULL;
+    unsigned int* IDK_butthecodeisbroken = NULL;
+
     Vector3 torusNormals[POINTS] = {0};
 
-    if(get_space(&torus) == 1) {
+
+    if(get_space(&torus, &frameColors) == 1) {
         goto exit;
     }
 
-    if(get_space(&sphere) == 1) {
+    if(get_space(&sphere, &IDK_butthecodeisbroken) == 1) {
         goto exit;
     }
+
+        
+
+
 
   
   
     torus_init(&torus, torusNormals, 2.5, 2);
 
 
-    Manifold_draw(renderer, &torus, torusNormals, 0, 0, 20, 100);
+    Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 0, 20);
 
 
 
@@ -64,12 +71,12 @@ int main(int argc, char** argv) {
 
 
     double deltaTime = 0;
-    float deltaRad = PI / 720;
+    float deltaRad = PI / 120;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int drawPrecision = 1000;
-    int linePrecision = 1000;
+    int drawPrecision = 20;
+
 
 
 
@@ -98,8 +105,13 @@ int main(int argc, char** argv) {
 
 
 
-        Manifold_draw(renderer, &torus, torusNormals, 0, 120 * sin(2 * Rad), drawPrecision, linePrecision);
 
+        Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 120 * sin(2 * Rad), drawPrecision);
+
+        SDL_UpdateTexture(texture, NULL, frameColors, S_WIDTH * S_HEIGHT * sizeof(unsigned int));
+
+
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
 
         SDL_RenderPresent(renderer);
 
@@ -140,6 +152,9 @@ int main(int argc, char** argv) {
     free(sphere.x);
     free(sphere.y);
     free(sphere.z);
+
+    free(frameColors);
+    free(IDK_butthecodeisbroken);
 
     exit: 
 
