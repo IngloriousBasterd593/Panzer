@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h> 
 #include <math.h>
-// #include <unistd.h>
+#include <unistd.h>
 #include <time.h>
 
 
@@ -33,7 +33,7 @@
 // macros
 
 #define PI 3.141592653589793
-#define PIXELS 40           
+#define PIXELS 200          
 #define POINTS PIXELS * PIXELS
 #define TWOPI 2 * PI
 #define TWOPIOVERPIXELS TWOPI / (PIXELS - 1)
@@ -72,18 +72,18 @@ typedef struct{
 // function prototypes 
 
 
-void SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture, const char* name, int width, int height) {
+int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture, const char* name, int width, int height) {
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         perror("SDL lmao could not initialize!");
-        return;
+        return 1;
     }
 
     *window = SDL_CreateWindow(name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
     if(*window == NULL) {
         perror("window null lmfao");
         SDL_Quit();
-        return;
+        return 1;
     }
 
     *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);
@@ -91,16 +91,16 @@ void SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** textur
         perror("renderer null bruh");
         SDL_DestroyWindow(*window);
         SDL_Quit();
-        return;
+        return 1;
     }
 
-    *texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
+    *texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
     if(*texture == NULL) {
         perror("texture null bruh");
         SDL_DestroyWindow(*window);
         SDL_DestroyRenderer(*renderer);
         SDL_Quit();
-        return;
+        return 1;
     }
 
 
@@ -110,13 +110,13 @@ void SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** textur
     SDL_SetRenderTarget(*renderer, *texture);
     SDL_RenderPresent(*renderer);
 
-    return;
+    return 0;
 }
 
 
 
 
-int get_space(Manifold* manifold, unsigned int** colors) {
+int get_space(Manifold* manifold) {
 
     manifold->x = malloc(POINTS * sizeof(float));
     if(manifold->x == NULL) {
@@ -139,23 +139,6 @@ int get_space(Manifold* manifold, unsigned int** colors) {
         return 1;
     }
 
-    
-    *colors = malloc(S_WIDTH * S_HEIGHT * sizeof(unsigned int));
-    if(*colors == NULL) {
-        free(manifold->x);
-        free(manifold->y);
-        free(manifold->z);
-        perror("bruh");
-        return 1;
-    }
-
-
-    for(int i = 0; i < S_WIDTH * S_HEIGHT; i++) {
-        (*colors)[i] = (255 << 24) | (255 << 16) | (255 << 8) | 255; 
-    }
-    
-
-
     return 0;
 }
 
@@ -167,7 +150,10 @@ Vector3 unit(Vector3* v) {
     double magnitude = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
     Vector3 normalized;
 
-    if (magnitude == 0) {
+    // printf("%f\n", magnitude);
+
+    if (magnitude == 0.0f) {
+        // printf("rip bozo lmfaoooo\n");
         normalized.x = normalized.y = normalized.z = 0;
         return normalized;
     } 
@@ -292,7 +278,7 @@ void torus_init(Manifold* manifold, Vector3 manifoldNormals[], float radiusInner
 
 
 
-void lineBresenham(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 vertexStart, Vector2 vertexEnd, int deltaX, int deltaY, uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
+void lineBresenham(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 vertexStart, Vector2 vertexEnd, int deltaX, int deltaY, unsigned int color) {
     
     short x1 = vertexStart.x;
     short y1 = vertexStart.y;
@@ -309,10 +295,8 @@ void lineBresenham(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 ve
     short error2;
 
     while(1) {
-
-        frameColors[(y1 + deltaY) * S_WIDTH + x1 + deltaX] = (R << 24) | (G << 16) | (B << 8) | A;
-
-        // SDL_RenderDrawPoint(renderer, x1 + deltaX, y1 + deltaY);
+        // not out of bounds, trust me
+        frameColors[((y1 + deltaY) * S_WIDTH) + x1 + deltaX] = color;
 
         if (x1 == x2 && y1 == y2) {
             break;
@@ -334,7 +318,7 @@ void lineBresenham(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 ve
 
 
 
-void fillTriangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, int trianglePrecision, uint8_t R, uint8_t G, uint8_t B, uint8_t A, int Xoffset, int Yoffset) {
+void fillTriangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 baseVertex1, Vector2 baseVertex2, Vector2 centralVertex, int trianglePrecision, unsigned int color, int Xoffset, int Yoffset) {
 
     int deltaX = C_winX + Xoffset;
     int deltaY = C_winY + Yoffset;
@@ -355,7 +339,7 @@ void fillTriangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 bas
         point2.x = baseVertex2.x + dx2;
         point2.y = baseVertex2.y + dy2;
 
-        lineBresenham(renderer, frameColors, point1, point2, deltaX, deltaY, R, G, B, A);
+        lineBresenham(renderer, frameColors, point1, point2, deltaX, deltaY, color);
 
     }
 
@@ -365,14 +349,12 @@ void fillTriangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 bas
 
 
 
-void fillRectangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 vertexA, Vector2 vertexB, Vector2 vertexC, Vector2 vertexD, int drawPrecision, uint8_t R, uint8_t G, uint8_t B, uint8_t A, int deltaX, int deltaY) {
+void fillRectangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 vertexA, Vector2 vertexB, Vector2 vertexC, Vector2 vertexD, int drawPrecision, unsigned int color, int deltaX, int deltaY) {
  
     if(drawPrecision <= 0) {
         perror("rip bozo");
         return;
     }
-
-    SDL_SetRenderDrawColor(renderer, R, G, B, 255);
 
     float dxU = (vertexD.x - vertexC.x) / drawPrecision;
     float dyU = (vertexD.y - vertexC.y) / drawPrecision;
@@ -387,7 +369,7 @@ void fillRectangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2 ve
         vertexC.x += dxL;
         vertexC.y += dyL;
 
-        lineBresenham(renderer, frameColors, vertexA, vertexC, deltaX, deltaY, R, G, B, A);
+        lineBresenham(renderer, frameColors, vertexA, vertexC, deltaX, deltaY, color);
     }
 
     return;
@@ -415,21 +397,30 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldN
 
     int grayscaleRGB;
     float grayscaleCoefficient;
+    unsigned int color;
 
-    Vector3 lightPerspectiveVector = {1, 0, 0};
+    Vector3 lightPerspectiveVector = {0, 0, 1};
+    Vector3 viewVector = {0, 0, 1};
 
     Vector2 vertex1;
     Vector2 vertex2;
     Vector2 vertexUpper1;
     Vector2 vertexUpper2;
 
+    memset(frameColors, 0xFF, S_WIDTH * S_HEIGHT * sizeof(unsigned int));
+
     for(int q = 0; q < PIXELS; q++) {
         for(int l = 0; l < PIXELS; l++) {
+
+            index = q * PIXELS + l;
+
+            if(dotproduct(&viewVector, &manifoldNormals[index]) < 0) {
+                continue;
+            }
             
             nextL = (l + 1) % PIXELS;
             nextQ = (q + 1) % PIXELS;
 
-            index = q * PIXELS + l;
             indexPlusOne = q * PIXELS + nextL;
             indexPlusPixels = nextQ * PIXELS + l;
             indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
@@ -438,19 +429,24 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3 manifoldN
 
             grayscaleRGB = (uint8_t) (255 - (90 * (1 - grayscaleCoefficient)));
 
-            vertex1.x = manifold->y[index];
-            vertex1.y = manifold->z[index];
+            color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
 
-            vertex2.x = manifold->y[indexPlusOne];
-            vertex2.y = manifold->z[indexPlusOne];
+            vertex1.x = manifold->x[index];
+            vertex1.y = manifold->y[index];
 
-            vertexUpper1.x = manifold->y[indexPlusPixels];
-            vertexUpper1.y = manifold->z[indexPlusPixels];
+            vertex2.x = manifold->x[indexPlusOne];
+            vertex2.y = manifold->y[indexPlusOne];
 
-            vertexUpper2.x = manifold->y[indexPlusPixelsPlusOne];
-            vertexUpper2.y = manifold->z[indexPlusPixelsPlusOne];   
+            vertexUpper1.x = manifold->x[indexPlusPixels];
+            vertexUpper1.y = manifold->y[indexPlusPixels];
 
-            fillRectangle(renderer, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, grayscaleRGB, grayscaleRGB, grayscaleRGB, 255, deltaX, deltaY);
+            vertexUpper2.x = manifold->x[indexPlusPixelsPlusOne];
+            vertexUpper2.y = manifold->y[indexPlusPixelsPlusOne];   
+
+            fillRectangle(renderer, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color, deltaX, deltaY);
+
+            // fillTriangle(renderer, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color, deltaX, deltaY);
+            //fillTriangle(renderer, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color, deltaX, deltaY);
 
         }
     }

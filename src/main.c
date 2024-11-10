@@ -7,14 +7,23 @@ int main(int argc, char** argv) {
     SDL_Texture* texture = NULL;
     SDL_Renderer* renderer = NULL;
 
-    SDL_init(&window, &renderer, &texture, "3D", S_WIDTH, S_HEIGHT);
+    if(SDL_init(&window, &renderer, &texture, "3D", S_WIDTH, S_HEIGHT) == 1) {
+        goto quit;
+    }
 
 
     clock_t start, end;
     double cpu_time_used;
 
 
+   
 
+
+
+
+
+
+    // SDL_Delay(3000);
 
 
     start = clock();
@@ -27,29 +36,37 @@ int main(int argc, char** argv) {
     Manifold sphere;
 
     unsigned int* frameColors = NULL;
-    unsigned int* IDK_butthecodeisbroken = NULL;
+    unsigned int* sphereFrameColors = NULL;
 
     Vector3 torusNormals[POINTS] = {0};
+    Vector3 sphereNormals[POINTS] = {0};
 
 
-    if(get_space(&torus, &frameColors) == 1) {
+    if(get_space(&torus) == 1) {
         goto exit;
     }
 
-    if(get_space(&sphere, &IDK_butthecodeisbroken) == 1) {
+    if(get_space(&sphere) == 1) {
         goto exit;
     }
 
+    frameColors = malloc(S_WIDTH * S_HEIGHT * sizeof(unsigned int));
+    if(frameColors == NULL) {
+        perror("bruh");
+        goto free;
+    }
         
 
 
 
   
   
-    torus_init(&torus, torusNormals, 2.5, 2);
+    // torus_init(&torus, torusNormals, 2.5, 2);
+    sphere_init(&sphere, sphereNormals, 8);
 
 
-    Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 0, 20);
+    // Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 0, 20);
+    Manifold_draw(renderer, &sphere, sphereNormals, frameColors, 0, 0, 20);
 
 
 
@@ -70,11 +87,13 @@ int main(int argc, char** argv) {
 
 
     double deltaTime = 0;
-    float deltaRad = PI / 120;
+    float deltaRad = PI / 720;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int drawPrecision = 20;
+    int drawPrecision = 10;
+
+    // Manifold_rotate(&torus, torusNormals, PI / 2, 'x');
 
 
 
@@ -104,10 +123,11 @@ int main(int argc, char** argv) {
 
 
 
+        Manifold_draw(renderer, &sphere, sphereNormals, frameColors, 0, 0, drawPrecision);
 
-        Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 120 * sin(2 * Rad), drawPrecision);
 
-        SDL_UpdateTexture(texture, NULL, frameColors, S_WIDTH * S_HEIGHT * sizeof(unsigned int));
+        SDL_UpdateTexture(texture, NULL, frameColors, S_WIDTH * sizeof(unsigned int));
+        
 
 
         SDL_RenderCopy(renderer, texture, NULL, NULL);
@@ -116,10 +136,14 @@ int main(int argc, char** argv) {
 
 
 
-        Manifold_rotate(&torus, torusNormals, deltaRad, 'x');
-        Manifold_rotate(&torus, torusNormals, deltaRad, 'y');
-        Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
+        // Manifold_rotate(&torus, torusNormals, deltaRad, 'x');
+        //Manifold_rotate(&torus, torusNormals, deltaRad, 'y');
+        // Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
 
+
+        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
+        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'y');
+        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'z');
       
 
 
@@ -132,9 +156,13 @@ int main(int argc, char** argv) {
 
         end = clock();
 
-
         cpu_time_used = ((double) (end - start));
-        printf("%4.0f FPS\n", 1000 / cpu_time_used);  
+
+        if(cpu_time_used < 16) {
+            usleep(1000 * (16 - cpu_time_used));
+        }
+
+        printf("%4.0f miliseconds per frame\n", cpu_time_used);  
 
 
     
@@ -142,6 +170,9 @@ int main(int argc, char** argv) {
         
     
     }
+
+
+    free:
 
 
     free(torus.x);
@@ -153,13 +184,14 @@ int main(int argc, char** argv) {
     free(sphere.z);
 
     free(frameColors);
-    free(IDK_butthecodeisbroken);
 
     exit: 
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    quit:
     
     return 0;
 }
