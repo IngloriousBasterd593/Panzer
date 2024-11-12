@@ -442,8 +442,6 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifold
     Vector2f vertexUpper1;
     Vector2f vertexUpper2;
 
-    memset(frameColors, 0xFF, S_WIDTH * S_HEIGHT * sizeof(unsigned int));
-
     for(int q = 0; q < PIXELS; q++) {
         for(int l = 0; l < PIXELS; l++) {
 
@@ -460,7 +458,7 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifold
             indexPlusPixels = nextQ * PIXELS + l;
             indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
 
-            grayscaleCoefficient = fabs(dotproduct(&manifoldNormals[index], &lightPerspectiveVector));
+            grayscaleCoefficient = (dotproduct(&manifoldNormals[index], &lightPerspectiveVector));
 
             grayscaleRGB = (uint8_t) (255 - (132 * (1 - grayscaleCoefficient)));
 
@@ -481,7 +479,7 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifold
             fillRectangle(renderer, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color, deltaX, deltaY);
 
             // fillTriangle(renderer, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color, deltaX, deltaY);
-            //fillTriangle(renderer, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color, deltaX, deltaY);
+            // fillTriangle(renderer, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color, deltaX, deltaY);
 
         }
     }
