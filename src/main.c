@@ -38,8 +38,8 @@ int main(int argc, char** argv) {
     unsigned int* frameColors = NULL;
     unsigned int* sphereFrameColors = NULL;
 
-    Vector3 torusNormals[POINTS] = {0};
-    Vector3 sphereNormals[POINTS] = {0};
+    Vector3f torusNormals[POINTS] = {0};
+    Vector3f sphereNormals[POINTS] = {0};
 
 
     if(get_space(&torus) == 1) {
@@ -61,12 +61,12 @@ int main(int argc, char** argv) {
 
   
   
-    // torus_init(&torus, torusNormals, 2.5, 2);
-    sphere_init(&sphere, sphereNormals, 8);
+    torus_init(&torus, torusNormals, 2.5, 2);
+    // sphere_init(&sphere, sphereNormals, 8);
 
 
-    // Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 0, 20);
-    Manifold_draw(renderer, &sphere, sphereNormals, frameColors, 0, 0, 20);
+    Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 0, 20);
+    // Manifold_draw(renderer, &sphere, sphereNormals, frameColors, 0, 0, 20);
 
 
 
@@ -87,13 +87,11 @@ int main(int argc, char** argv) {
 
 
     double deltaTime = 0;
-    float deltaRad = PI / 720;
+    float deltaRad = PI / 540;
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int drawPrecision = 10;
-
-    // Manifold_rotate(&torus, torusNormals, PI / 2, 'x');
+    int drawPrecision = 15;
 
 
 
@@ -123,7 +121,8 @@ int main(int argc, char** argv) {
 
 
 
-        Manifold_draw(renderer, &sphere, sphereNormals, frameColors, 0, 0, drawPrecision);
+        // Manifold_draw(renderer, &sphere, sphereNormals, frameColors, 0, 0, drawPrecision);
+        Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 130 * sin(Rad), drawPrecision);
 
 
         SDL_UpdateTexture(texture, NULL, frameColors, S_WIDTH * sizeof(unsigned int));
@@ -136,14 +135,14 @@ int main(int argc, char** argv) {
 
 
 
-        // Manifold_rotate(&torus, torusNormals, deltaRad, 'x');
-        //Manifold_rotate(&torus, torusNormals, deltaRad, 'y');
-        // Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
+        Manifold_rotate(&torus, torusNormals, deltaRad, 'x');
+        Manifold_rotate(&torus, torusNormals, deltaRad, 'y');
+        Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
 
 
-        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
-        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'y');
-        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'z');
+        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
+        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'y');
+        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'z');
       
 
 
