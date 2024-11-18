@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
     SDL_Texture* texture = NULL;
     SDL_Renderer* renderer = NULL;
 
-    if(SDL_init(&window, &renderer, &texture, "3D", S_WIDTH, S_HEIGHT) == 1) {
+    if(SDL_init(&window, &renderer, &texture, "3D", SCREENWIDTH, SCREENHEIGHT) == 1) {
         goto quit;
     }
 
@@ -15,15 +15,23 @@ int main(int argc, char** argv) {
     clock_t start, end;
     double cpu_time_used;
 
+    char* shaderProgram = malloc(BUFFLEN * sizeof(char));
+    if(shaderProgram == NULL) {
+        fprintf(stderr, "couldnt get space forshader program");
+        return 1;
+    }
 
-   
+
+    copyShaderSource("C:/Panzer/src/vertex.glsl", shaderProgram);
 
 
 
 
 
 
-    // SDL_Delay(3000);
+
+
+
 
 
     start = clock();
@@ -35,21 +43,26 @@ int main(int argc, char** argv) {
     Manifold torus;
     Manifold sphere;
 
+    vec3f lightPerspectiveVector = {0, 0, 1};
+    vec3f viewVector = {0, 0, 1};
+
+    Camera camera = {viewVector, PI / 1.2, viewVector, SCREENWIDTH / SCREENHEIGHT, 0.1, 1};
+
     unsigned int* frameColors = NULL;
 
-    Vector3f torusNormals[POINTS];
-    Vector3f sphereNormals[POINTS];
+    vec3f torusNormals[VERTICES];
+    vec3f sphereNormals[VERTICES];
 
 
     if(get_space(&torus) == 1) {
-        goto exit;
+        goto SDLquit;
     }
 
     if(get_space(&sphere) == 1) {
-        goto exit;
+        goto SDLquit;
     }
 
-    frameColors = malloc(S_WIDTH * S_HEIGHT * sizeof(unsigned int));
+    frameColors = malloc(SCREENSIZE * sizeof(unsigned int));
     if(frameColors == NULL) {
         perror("bruh");
         goto free;
@@ -60,12 +73,12 @@ int main(int argc, char** argv) {
 
   
   
-    torus_init(&torus, torusNormals, 2.5, 2);
-    sphere_init(&sphere, sphereNormals, 6.5);
+    // torus_init(&torus, torusNormals, 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
+    sphere_init(&sphere, sphereNormals, 200, HALFWINWIDTH, HALFWINHEIGHT, 1000);
 
 
-    Manifold_draw(renderer, &torus, torusNormals, frameColors, 0, 0, 20);
-    Manifold_draw(renderer, &sphere, sphereNormals, frameColors, 0, 0, 20);
+    // Manifold_draw(&torus, torusNormals, &camera, frameColors, 0, 0, 20);
+    Manifold_draw(&sphere, sphereNormals, &camera, frameColors, 20);
 
 
 
@@ -110,7 +123,7 @@ int main(int argc, char** argv) {
         
         start = clock();
 
-        memset(frameColors, 0xFF, S_WIDTH * S_HEIGHT * sizeof(unsigned int));
+        memset(frameColors, 0xFF, SCREENWIDTH * SCREENHEIGHT * sizeof(unsigned int));
 
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -118,11 +131,11 @@ int main(int argc, char** argv) {
 
 
 
-        Manifold_draw(renderer, &sphere, sphereNormals, frameColors, -200, 0, drawPrecision);
-        Manifold_draw(renderer, &torus, torusNormals, frameColors, 200, 130 * sin(Rad), drawPrecision);
+        Manifold_draw(&sphere, sphereNormals, &camera, frameColors, drawPrecision);
+        // Manifold_draw(&torus, torusNormals, frameColors, 200, 130 * sin(Rad), drawPrecision);
 
 
-        SDL_UpdateTexture(texture, NULL, frameColors, S_WIDTH * sizeof(unsigned int));
+        SDL_UpdateTexture(texture, NULL, frameColors, SCREENWIDTH * sizeof(unsigned int));
         
 
 
@@ -132,14 +145,14 @@ int main(int argc, char** argv) {
 
 
 
-        Manifold_rotate(&torus, torusNormals, deltaRad, 'x');
-        Manifold_rotate(&torus, torusNormals, deltaRad, 'y');
-        Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
+        // Manifold_rotate(&torus, torusNormals, deltaRad, 'x');
+        // Manifold_rotate(&torus, torusNormals, deltaRad, 'y');
+        // Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
 
 
-        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
-        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'y');
-        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'z');
+        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
+        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'y');
+        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'z');
       
 
 
@@ -179,9 +192,18 @@ int main(int argc, char** argv) {
     free(sphere.y);
     free(sphere.z);
 
-    free(frameColors);
+    free(torus.xProj);
+    free(torus.yProj);
+    free(torus.zProj);
 
-    exit: 
+    free(sphere.xProj);
+    free(sphere.yProj);
+    free(sphere.zProj);
+
+    free(frameColors);
+    free(shaderProgram);
+
+    SDLquit: 
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

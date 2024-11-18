@@ -1,6 +1,19 @@
 #ifndef SDL_GRAPHICS_LIB
 #define SDL_GRAPHICS_LIB
 
+
+
+/*
+*
+*       This is supposed to be a 3d physics simulation.
+*       The implementation is inherently bloated and cant be fixed, at this point it's easier to rewrite the entire thing than to fix the existing codebase
+*       Do not use any of these functions for any purpose, as they lack proper error handling (designed to make them faster) and are non refactorable, 
+*       lacking proper documentation and inhereting implementation issues from the person who wrote them.
+*       
+*/
+
+
+
 // external libs
 
 #include <stdbool.h>
@@ -9,6 +22,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdint.h>
 
 
 // OpenGL
@@ -31,79 +45,147 @@
 
 // macros
 
-#define PI 3.141592653589793
-#define PIXELS 150          
-#define POINTS PIXELS * PIXELS
-#define TWOPI 2 * PI
-#define TWOPIOVERPIXELS TWOPI / (PIXELS - 1)
-#define PIOVERPIXELS PI / (PIXELS - 1)
+#define PIXELS 160                                  // loop counter for 3 dimensional shape access    
+#define VERTICES (PIXELS * PIXELS)                  // number of vertices for each object
+#define PI M_PI
+#define TWOPI (2 * PI)
+#define TWOPIOVERPIXELS ((TWOPI) / (PIXELS - 1))    // step size for initialization
+#define PIOVERPIXELS ((PI) / (PIXELS - 1))          // step size for initialization
 #define launadainais 1
-#define S_WIDTH 1280
-#define S_HEIGHT 720
-#define C_winX S_WIDTH / 2
-#define C_winY S_HEIGHT / 2
-#define MAX_LOOP_LEN 4096
+#define SCREENWIDTH 1280
+#define SCREENHEIGHT 720
+#define SCREENSIZE (SCREENWIDTH * SCREENHEIGHT)
+#define HALFWINWIDTH (SCREENWIDTH / 2)
+#define HALFWINHEIGHT (SCREENHEIGHT / 2)
+#define MAXLOOPLEN 4096                             // lmao
+#define BUFFLEN 1024                                // safety
+#define FAR 2                                     // far plane distance for perspective projection
+#define NEAR 1                                    // near plane distance for perspective projection
 
 
 // structs
 
-typedef struct{
+typedef struct {
     float x;
     float y;
     float z;
-} Vector3f;
+} vec3f;
 
-typedef struct{
+typedef struct {
     float x;
     float y;
-} Vector2f;
+    float z;
+    float w;
+} vec4f;
 
-typedef struct{
+typedef struct {
+    float mat[4][4];
+} mat4f;
+
+typedef struct {
+    float x;
+    float y;
+} vec2f;
+
+typedef struct {
     int x;
     int y;
     int z;
-} Vector3i;
+} vec3i;
 
-typedef struct{
+typedef struct {
     int x;
     int y;
-} Vector2i;
+} vec2i;
 
-
-typedef struct{
+typedef struct {
     float* x;
     float* y;
     float* z;
+    float* xProj;
+    float* yProj;
+    float* zProj;
+    int Xposition;
+    int Yposition;
+    int Zposition;
 } Manifold;
+
+typedef struct {
+    vec3f POV;
+    float FOV;
+    vec3f lightingDirectionVector;
+    float aspectRatio;
+    float nearPlane;
+    float farPlane;
+} Camera;
 
 
 // Function Implementations
 
-int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture, const char* name, int width, int height) {
+void copyShaderSource(const char* source, char* destination) 
+{
+    if(source == NULL || destination == NULL) 
+    {
+        fprintf(stderr, "source or destination dont exist\n");
+    }
 
-    if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-        perror("SDL lmao could not initialize!");
+    FILE* shaderFile = fopen(source, "r");
+    if(shaderFile == NULL) 
+    {
+        fprintf(stderr, "failed to open file\n");
+        return;
+    }
+
+    int i = 0; 
+    char ch;
+
+    while((ch = fgetc(shaderFile)) != EOF) 
+    {
+        if(i > BUFFLEN - 2) 
+        {
+            destination[i] = '\0';
+            break;
+        }
+
+        destination[i] = ch;
+        i++;
+    }
+
+    fclose(shaderFile);
+
+    return;
+}
+
+int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture, const char* name, int width, int height) 
+{
+
+    if(SDL_Init(SDL_INIT_VIDEO) < 0) 
+    {
+        fprintf(stderr, "couldnt init sdl\n");
         return 1;
     }
 
     *window = SDL_CreateWindow(name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
-    if(*window == NULL) {
-        perror("window null lmfao");
+    if(*window == NULL) 
+    {
+        fprintf(stderr, "couldnt init window\n");
         SDL_Quit();
         return 1;
     }
 
     *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);
-    if(*renderer == NULL) {
-        perror("renderer null bruh");
+    if(*renderer == NULL) 
+    {
+        fprintf(stderr, "couldnt init renderer\n");
         SDL_DestroyWindow(*window);
         SDL_Quit();
         return 1;
     }
 
     *texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-    if(*texture == NULL) {
-        perror("texture null bruh");
+    if(*texture == NULL) 
+    {
+        fprintf(stderr, "couldnt init texture\n");
         SDL_DestroyWindow(*window);
         SDL_DestroyRenderer(*renderer);
         SDL_Quit();
@@ -122,26 +204,63 @@ int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture
 
 
 
-int get_space(Manifold* manifold) {
+int get_space(Manifold* manifold) 
+{
 
-    manifold->x = malloc(POINTS * sizeof(float));
-    if(manifold->x == NULL) {
-        perror("bruh");
+    manifold->x = malloc(VERTICES * sizeof(float));
+    if(manifold->x == NULL) 
+    {
+        fprintf(stderr, "couldnt init manifold\n");
         return 1;
     }
 
-    manifold->y = malloc(POINTS * sizeof(float));
-    if(manifold->y == NULL) {
+    manifold->y = malloc(VERTICES * sizeof(float));
+    if(manifold->y == NULL) 
+    {
         free(manifold->x);
-        perror("bruh");
+        fprintf(stderr, "couldnt init manifold\n");
         return 1;
     }
 
-    manifold->z = malloc(POINTS * sizeof(float));
-    if(manifold->z == NULL) {
+    manifold->z = malloc(VERTICES * sizeof(float));
+    if(manifold->z == NULL) 
+    {
         free(manifold->x);
         free(manifold->y);
-        perror("bruh");
+        fprintf(stderr, "couldnt init manifold\n");
+        return 1;
+    }
+
+    manifold->xProj = malloc(VERTICES * sizeof(float));
+    if(manifold->xProj == NULL) 
+    {
+        free(manifold->x);
+        free(manifold->y);
+        free(manifold->z);
+        fprintf(stderr, "couldnt init manifold\n");
+        return 1;
+    }
+
+    manifold->yProj = malloc(VERTICES * sizeof(float));
+    if(manifold->yProj == NULL) 
+    {
+        free(manifold->x);
+        free(manifold->y);
+        free(manifold->z);
+        free(manifold->xProj);
+        fprintf(stderr, "couldnt init manifold\n");
+        return 1;
+    }
+
+    manifold->zProj = malloc(VERTICES * sizeof(float));
+    if(manifold->zProj == NULL) 
+    {
+        free(manifold->x);
+        free(manifold->y);
+        free(manifold->z);
+        free(manifold->xProj);
+        free(manifold->yProj);
+        fprintf(stderr, "couldnt init manifold\n");
         return 1;
     }
 
@@ -150,15 +269,15 @@ int get_space(Manifold* manifold) {
 
 
 
-Vector3f unit(Vector3f* v) {
+vec3f unit(vec3f* v) 
+{
 
-    double magnitude = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
-    Vector3f normalized;
+    float magnitude = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+    vec3f normalized;
 
-    // printf("%f\n", magnitude);
-
-    if (magnitude == 0.0f) {
-        // printf("rip bozo lmfaoooo\n");
+    if(magnitude == 0.0f) 
+    {
+        // fprintf(stderr, "magnitude zero\n");
         normalized.x = normalized.y = normalized.z = 0;
         return normalized;
     } 
@@ -172,61 +291,65 @@ Vector3f unit(Vector3f* v) {
 
 
 
-Vector3f crossproduct(Vector3f* vector1, Vector3f* vector2) {
-    Vector3f Vnormal;
-
-    Vnormal.x = vector1->y * vector2->z - vector1->z * vector2->y;
-    Vnormal.y = vector1->z * vector2->x - vector1->x * vector2->z;
-    Vnormal.z = vector1->x * vector2->y - vector1->y * vector2->x;
-
-    return Vnormal;
+vec3f crossproduct(vec3f* v1, vec3f* v2) 
+{
+    return (vec3f) {
+                    v1->y * v2->z - v1->z * v2->y, 
+                    v1->z * v2->x - v1->x * v2->z, 
+                    v1->x * v2->y - v1->y * v2->x 
+    };
 }
 
 
 
-float dotproduct(Vector3f* vector1, Vector3f* vector2) {
-    return vector1->x * vector2->x + vector1->y * vector2->y + vector1->z * vector2->z;
+float dotproduct(vec3f* v1, vec3f* v2) 
+{
+    return v1->x * v2->x + v1->y * v2->y + v1->z * v2->z;
 }
 
 
 
-void sphere_init(Manifold* manifold, Vector3f manifoldNormals[], float radius) {
+void sphere_init(Manifold* manifold, vec3f* manifoldNormals, int radius, int offsetX, int offsetY, int offsetZ) 
+{
 
-    if(radius <= 0) {
-        perror("bozo");
+    if(radius <= 10) 
+    {
+        fprintf(stderr, "write a correct radius, bozo\n");
         return;
     }
+
+    manifold->Xposition = HALFWINWIDTH;
+    manifold->Yposition = HALFWINWIDTH;
+    manifold->Zposition = 2000;
     
-    int r = radius * 25;
     int index;
     int indexPlusPixels;
     int indexPlusOne;
     int nextL;
     int nextQ;
 
-    Vector3f normalVector;
-    Vector3f partialDerivativeU;
-    Vector3f partialDerivativeV;
+    vec3f normalVector;
+    vec3f partialDerivativeU;
+    vec3f partialDerivativeV;
     
-    for(int j = 0; j < PIXELS; j++) {
-        for(int k = 0; k < PIXELS; k++) {
-
-        nextL = (k + 1) % PIXELS;
-        nextQ = (j + 1) % PIXELS;
+    for(int j = 0; j < PIXELS; j++) 
+    {
+        for(int k = 0; k < PIXELS; k++) 
+        {
 
         index = j * PIXELS + k; 
-        indexPlusOne = j * PIXELS + nextL;
-        indexPlusPixels = nextQ * PIXELS + k;
         
-        manifold->x[index] = (r * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j));
-        manifold->y[index] = (r * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j));
-        manifold->z[index] = (r * cos(PIOVERPIXELS * j));
+        manifold->x[index] = ((radius * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j)));
+        manifold->y[index] = ((radius * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j)));
+        manifold->z[index] = ((radius * cos(PIOVERPIXELS * j)));
 
         }
     }
 
-    for(int j = 0; j < PIXELS; j++) {
-        for(int k = 0; k < PIXELS; k++) {
+    for(int j = 0; j < PIXELS; j++) 
+    {
+        for(int k = 0; k < PIXELS; k++) 
+        {
 
         nextL = (k + 1) % PIXELS;
         nextQ = (j + 1) % PIXELS;
@@ -255,19 +378,22 @@ void sphere_init(Manifold* manifold, Vector3f manifoldNormals[], float radius) {
 
 
 
-void torus_init(Manifold* manifold, Vector3f manifoldNormals[], float radiusInner, float radiusOuter) {
+void torus_init(Manifold* manifold, vec3f* manifoldNormals, int innerRadius, int outerRadius, int offsetX, int offsetY, int offsetZ) 
+{
 
-    if(radiusInner <= 0 || radiusOuter <= 0) {
-        perror("bozoo");
+    if(innerRadius <= 10 || outerRadius <= 10) 
+    {
+        fprintf(stderr, "write a correct radius, bozo\n");
         return;
     }
 
-    int Rinner = radiusInner * 25;
-    int Router = radiusOuter * 50;
+    manifold->Xposition = HALFWINWIDTH;
+    manifold->Yposition = HALFWINWIDTH;
+    manifold->Zposition = 700;
 
-    Vector3f normalVector;
-    Vector3f partialDerivativeU;
-    Vector3f partialDerivativeV;
+    vec3f normalVector;
+    vec3f partialDerivativeU;
+    vec3f partialDerivativeV;
 
     int index;
     int indexPlusPixels;
@@ -275,19 +401,24 @@ void torus_init(Manifold* manifold, Vector3f manifoldNormals[], float radiusInne
     int nextL;
     int nextQ;
 
-    for(int j = 0; j < PIXELS; j++) {
-        for(int k = 0; k < PIXELS; k++) {
+    for(int j = 0; j < PIXELS; j++) 
+    {
+        for(int k = 0; k < PIXELS; k++) 
+        {
+
         index = j * PIXELS + k; 
 
-        manifold->x[index] = ((Router + Rinner * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j));
-        manifold->y[index] = ((Router + Rinner * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j));
-        manifold->z[index] = (Rinner * sin(TWOPIOVERPIXELS * k));
+        manifold->x[index] = (((outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j)) + offsetX);
+        manifold->y[index] = (((outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j)) + offsetY);
+        manifold->z[index] = ((innerRadius * sin(TWOPIOVERPIXELS * k)) + offsetZ);
 
         }
     }
 
-    for(int j = 0; j < PIXELS; j++) {
-        for(int k = 0; k < PIXELS; k++) {
+    for(int j = 0; j < PIXELS; j++) 
+    {
+        for(int k = 0; k < PIXELS; k++) 
+        {
 
         nextL = (k + 1) % PIXELS;
         nextQ = (j + 1) % PIXELS;
@@ -316,7 +447,8 @@ void torus_init(Manifold* manifold, Vector3f manifoldNormals[], float radiusInne
 
 
 
-void lineBresenham(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f vertexStart, Vector2f vertexEnd, int deltaX, int deltaY, unsigned int color) {
+void lineBresenham(Manifold* manifold, unsigned int* frameColors, vec2f vertexStart, vec2f vertexEnd, unsigned int color) 
+{
     
     short x1 = vertexStart.x;
     short y1 = vertexStart.y;
@@ -332,43 +464,54 @@ void lineBresenham(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f v
     short error = dx - dy;
     short error2;
 
-    while(1) {
+    while(1) 
+    {
         // not out of bounds, trust me
-        frameColors[((y1 + deltaY) * S_WIDTH) + x1 + deltaX] = color;
+        if(((y1 + manifold->Yposition) * SCREENWIDTH) + x1 + manifold->Xposition > SCREENSIZE || ((y1 + manifold->Yposition) * SCREENWIDTH) + x1 + manifold->Xposition < 0) 
+        {
+            break;
+        }
 
-        if (x1 == x2 && y1 == y2) {
+        frameColors[((y1 + manifold->Yposition) * SCREENWIDTH) + x1 + manifold->Xposition] = color;
+
+        if(x1 == x2 && y1 == y2) 
+        {
             break;
         }
 
         error2 = 2 * error;
 
-        if (error2 > -dy) {
+        if(error2 > -dy) 
+        {
             error -= dy;
             x1 += stepX;
         }
-        if (error2 < dx) {
+
+        if(error2 < dx) 
+        {
             error += dx;
             y1 += stepY;
         }
     }
+
+    return;
 }
 
 
 
-void fillTriangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f baseVertex1, Vector2f baseVertex2, Vector2f centralVertex, int trianglePrecision, unsigned int color, int Xoffset, int Yoffset) {
-
-    int deltaX = C_winX + Xoffset;
-    int deltaY = C_winY + Yoffset;
+void fillTriangle(Manifold* manifold, unsigned int* frameColors, vec2f baseVertex1, vec2f baseVertex2, vec2f centralVertex, int trianglePrecision, unsigned int color) 
+{
 
     float dx1 = (centralVertex.x - baseVertex1.x) / trianglePrecision;
     float dy1 = (centralVertex.y - baseVertex1.y) / trianglePrecision;
     float dx2 = (centralVertex.x - baseVertex2.x) / trianglePrecision;
     float dy2 = (centralVertex.y - baseVertex2.y) / trianglePrecision;
 
-    Vector2f point1;
-    Vector2f point2;
+    vec2f point1;
+    vec2f point2;
 
-    for (int i = 0; i < trianglePrecision; i++) {
+    for (int i = 0; i < trianglePrecision; i++) 
+    {
 
         point1.x = baseVertex1.x + dx1;
         point1.y = baseVertex1.y + dy1;
@@ -376,7 +519,7 @@ void fillTriangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f ba
         point2.x = baseVertex2.x + dx2;
         point2.y = baseVertex2.y + dy2;
 
-        lineBresenham(renderer, frameColors, point1, point2, deltaX, deltaY, color);
+        lineBresenham(manifold, frameColors, point1, point2, color);
 
     }
 
@@ -385,19 +528,22 @@ void fillTriangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f ba
 
 
 
-void fillRectangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f vertexA, Vector2f vertexB, Vector2f vertexC, Vector2f vertexD, int drawPrecision, unsigned int color, int deltaX, int deltaY) {
- 
-    if(drawPrecision <= 0) {
-        perror("rip bozo");
+void fillRectangle(Manifold* manifold, unsigned int* frameColors, vec2f vertexA, vec2f vertexB, vec2f vertexC, vec2f vertexD, int drawPrecision, unsigned int color) 
+{
+    /*
+    if(drawPrecision <= 0) 
+    {
+        fprintf(stderr, "write a correct drawprecision, bozo\n");
         return;
-    }
+    } */
 
     float dxU = (vertexD.x - vertexC.x) / drawPrecision;
     float dyU = (vertexD.y - vertexC.y) / drawPrecision;
     float dxL = (vertexB.x - vertexA.x) / drawPrecision;
     float dyL = (vertexB.y - vertexA.y) / drawPrecision;
 
-    for(int i = 0; i <= drawPrecision; i++) {
+    for(int i = 0; i <= drawPrecision; i++) 
+    {
 
         vertexA.x += dxU;
         vertexA.y += dyU;
@@ -405,7 +551,7 @@ void fillRectangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f v
         vertexC.x += dxL;
         vertexC.y += dyL;
 
-        lineBresenham(renderer, frameColors, vertexA, vertexC, deltaX, deltaY, color);
+        lineBresenham(manifold, frameColors, vertexA, vertexC, color);
     }
 
     return;
@@ -413,10 +559,29 @@ void fillRectangle(SDL_Renderer* renderer, unsigned int* frameColors, Vector2f v
 
 
 
-void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifoldNormals[], unsigned int* frameColors, int Xoffset, int Yoffset, int drawPrecision) {
+/*
+vec3f perspectiveProject(vec3f* vertex, Camera* camera) 
+{
+    float f = 1.0f / tanf(camera->FOV / 2.0f);
+    
+    vec4f projectedVector = {
+                            (((vertex->x * f) / (camera->aspectRatio * vertex->z)) + 1.0f) * (SCREENWIDTH / 2.0f),
+                            (1.0f - ((vertex->y * f) / vertex->z)) * (SCREENHEIGHT / 2.0f),
+                            ((camera->farPlane + camera->nearPlane) * vertex->z + 2.0f * camera->farPlane * camera->nearPlane) / (camera->nearPlane - camera->farPlane), 
+                            vertex->z
+    };
 
-    if(drawPrecision < 1) {
-        perror("you twisted sack of shit");
+    return (vec3f) {projectedVector.x, projectedVector.y, projectedVector.z};
+}
+*/
+
+
+void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, unsigned int* frameColors, int drawPrecision) 
+{
+
+    if(drawPrecision < 1) 
+    {
+        fprintf(stderr, "write a correct drawprecision, bozo\n");
         return;
     }
 
@@ -427,27 +592,54 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifold
     int nextL;
     int nextQ;
 
-    int deltaX = C_winX + Xoffset;
-    int deltaY = C_winY + Yoffset;
-
     int grayscaleRGB;
     float grayscaleCoefficient;
     unsigned int color;
+    float f = 1.0f / tanf(camera->FOV / 2.0f);
 
-    Vector3f lightPerspectiveVector = {0, 0, 1};
-    Vector3f viewVector = {0, 0, 1};
+    vec2f vertex1;
+    vec2f vertex2;
+    vec2f vertexUpper1;
+    vec2f vertexUpper2;
 
-    Vector2f vertex1;
-    Vector2f vertex2;
-    Vector2f vertexUpper1;
-    Vector2f vertexUpper2;
-
-    for(int q = 0; q < PIXELS; q++) {
-        for(int l = 0; l < PIXELS; l++) {
-
+    // perform perspective projection
+    for(int q = 0; q < PIXELS; q++) 
+    {
+        for(int l = 0; l < PIXELS; l++) 
+        {
             index = q * PIXELS + l;
 
-            if(dotproduct(&viewVector, &manifoldNormals[index]) < 0) {
+            if (manifold->z[index] <= 0.1f) 
+            {
+                continue; 
+            }
+
+            vec4f projectedVertex = {
+                ((((manifold->x[index] + manifold->Xposition) * f) / (camera->aspectRatio * (manifold->z[index] + manifold->Zposition))) + 1.0f) * (SCREENWIDTH / 2.0f),
+                ((1.0f - (((manifold->y[index] + manifold->Yposition) * f) / manifold->z[index])) * (SCREENHEIGHT / 2.0f)),
+                ((camera->farPlane + camera->nearPlane) * (manifold->z[index] + manifold->Zposition) + 2.0f * camera->farPlane * camera->nearPlane) / (camera->nearPlane - camera->farPlane),
+                1.0f
+            };
+
+            manifold->xProj[index] = projectedVertex.x;
+            manifold->yProj[index] = projectedVertex.y;
+            manifold->zProj[index] = projectedVertex.z;
+
+           // printf("%f %f %f", manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition);
+            //printf("\t%f %f %f\n", manifold->xProj[index], manifold->yProj[index], manifold->zProj[index]);
+            //usleep(1000);
+
+        }
+    }
+
+
+    for(int q = 0; q < PIXELS; q++) 
+    {
+        for(int l = 0; l < PIXELS; l++) 
+        {
+            index = q * PIXELS + l;
+
+            if(dotproduct(&camera->POV, &manifoldNormals[index]) < 0) {
                 continue;
             }
             
@@ -458,12 +650,26 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifold
             indexPlusPixels = nextQ * PIXELS + l;
             indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
 
-            grayscaleCoefficient = (dotproduct(&manifoldNormals[index], &lightPerspectiveVector));
+            grayscaleCoefficient = (dotproduct(&manifoldNormals[index], &camera->lightingDirectionVector));
 
             grayscaleRGB = (uint8_t) (255 - (132 * (1 - grayscaleCoefficient)));
 
             color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
 
+
+            vertex1.x = manifold->xProj[index];
+            vertex1.y = manifold->yProj[index];
+
+            vertex2.x = manifold->xProj[indexPlusOne];
+            vertex2.y = manifold->yProj[indexPlusOne];
+
+            vertexUpper1.x = manifold->xProj[indexPlusPixels];
+            vertexUpper1.y = manifold->yProj[indexPlusPixels];
+
+            vertexUpper2.x = manifold->xProj[indexPlusPixelsPlusOne];
+            vertexUpper2.y = manifold->yProj[indexPlusPixelsPlusOne];   
+             
+/*
             vertex1.x = manifold->x[index];
             vertex1.y = manifold->y[index];
 
@@ -474,12 +680,13 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifold
             vertexUpper1.y = manifold->y[indexPlusPixels];
 
             vertexUpper2.x = manifold->x[indexPlusPixelsPlusOne];
-            vertexUpper2.y = manifold->y[indexPlusPixelsPlusOne];   
+            vertexUpper2.y = manifold->y[indexPlusPixelsPlusOne]; 
+*/
 
-            fillRectangle(renderer, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color, deltaX, deltaY);
+            fillRectangle(manifold, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
 
-            // fillTriangle(renderer, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color, deltaX, deltaY);
-            // fillTriangle(renderer, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color, deltaX, deltaY);
+            // fillTriangle(frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
+            // fillTriangle(frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
 
         }
     }
@@ -489,20 +696,24 @@ void Manifold_draw(SDL_Renderer* renderer, Manifold* manifold, Vector3f manifold
 
 
 
-void Manifold_rotate(Manifold* manifold, Vector3f manifoldNormals[], float rad, char axis) {
+void Manifold_rotate(Manifold* manifold, vec3f* manifoldNormals, float rad, char axis) 
+{
 
-    Vector3f previousVector;
+    vec3f previousVector;
 
     float cosRad = (float) cos(rad);
     float sinRad = (float) sin(rad);
 
-    int index = 0;
+    int index;
     
-    switch(axis) {
+    switch(axis) 
+    {
         case 'x':
-            for (int j = 0; j < PIXELS; j++) {
-                for (int k = 0; k < PIXELS; k++) {
-                    // Rotate manifold points
+            for (int j = 0; j < PIXELS; j++) 
+            {
+                for (int k = 0; k < PIXELS; k++) 
+                {
+                    // Rotate manifold VERTICES
                     index = j * PIXELS + k;
 
                     previousVector.x = manifold->x[index];
@@ -524,8 +735,10 @@ void Manifold_rotate(Manifold* manifold, Vector3f manifoldNormals[], float rad, 
         break;
 
         case 'y':
-            for (int j = 0; j < PIXELS; j++) {
-                for (int k = 0; k < PIXELS; k++) {
+            for (int j = 0; j < PIXELS; j++) 
+            {
+                for (int k = 0; k < PIXELS; k++) 
+                {
                     
                     index = j * PIXELS + k;
 
@@ -546,8 +759,10 @@ void Manifold_rotate(Manifold* manifold, Vector3f manifoldNormals[], float rad, 
             break;
 
         case 'z':
-            for (int j = 0; j < PIXELS; j++) {
-                for (int k = 0; k < PIXELS; k++) {
+            for (int j = 0; j < PIXELS; j++) 
+            {
+                for (int k = 0; k < PIXELS; k++) 
+                {
 
                     index = j * PIXELS + k;
 
