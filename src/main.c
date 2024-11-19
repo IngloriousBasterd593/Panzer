@@ -1,4 +1,7 @@
-#include "graphics.h"
+#include "mathematika/mathcore.h"
+#include "mathematika/pipeline.h"
+#include "utilities/shared.h"
+#include "utilities/glutilities.h"
 
 
 int main(int argc, char** argv) {
