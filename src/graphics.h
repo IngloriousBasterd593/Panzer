@@ -319,7 +319,7 @@ void sphere_init(Manifold* manifold, vec3f* manifoldNormals, int radius, int off
     }
 
     manifold->Xposition = HALFWINWIDTH;
-    manifold->Yposition = HALFWINWIDTH;
+    manifold->Yposition = HALFWINHEIGHT;
     manifold->Zposition = 2000;
     
     int index;
@@ -388,7 +388,7 @@ void torus_init(Manifold* manifold, vec3f* manifoldNormals, int innerRadius, int
     }
 
     manifold->Xposition = HALFWINWIDTH;
-    manifold->Yposition = HALFWINWIDTH;
+    manifold->Yposition = HALFWINHEIGHT;
     manifold->Zposition = 700;
 
     vec3f normalVector;
@@ -559,6 +559,29 @@ void fillRectangle(Manifold* manifold, unsigned int* frameColors, vec2f vertexA,
 
 
 
+
+mat4f* OrthographicProjectionMatrix4f(float left, float right, float bottom, float top, float nearZ, float farZ, Matrix4f* result) // applies to the entire matrix
+{
+    result->vecRows[0] = (Vector4f){ 2.0/(right-left), 0.0, 0.0, -(right+left)/(right-left) };
+    result->vecRows[1] = (Vector4f){ 0.0, 2.0/(top-bottom), 0.0, -(top+bottom)/(top-bottom) };
+    result->vecRows[2] = (Vector4f){ 0.0, 0.0, -2.0/(farZ-nearZ), -(farZ+nearZ)/(farZ-nearZ) };
+    result->vecRows[3] = (Vector4f){ 0.0, 0.0, 0.0, 1.0 };
+    return result;
+}
+
+
+/*
+mat4f* OrthographicProjectionMatrix4f(float left, float right, float bottom, float top, float nearZ, float farZ, mat4f* result) 
+{
+    result->vecRows[0] = { 2.0/(right-left), 0.0, 0.0, -(right+left)/(right-left) };
+    result->vecRows[1] = { 0.0, 2.0/(top-bottom), 0.0, -(top+bottom)/(top-bottom) };
+    result->vecRows[2] = { 0.0, 0.0, -2.0/(farZ-nearZ), -(farZ+nearZ)/(farZ-nearZ) };
+    result->vecRows[3] = { 0.0, 0.0, 0.0, 1.0 };
+    return result;
+}
+
+*/
+
 /*
 vec3f perspectiveProject(vec3f* vertex, Camera* camera) 
 {
@@ -609,23 +632,37 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
         {
             index = q * PIXELS + l;
 
+            /*
             if (manifold->z[index] <= 0.1f) 
             {
+                // perror("lmao");
                 continue; 
             }
+            */
 
+            vec3f projectedVertex = {((manifold->x[index] + manifold->Xposition) / manifold->z[index]) + HALFWINWIDTH, ((manifold->y[index] + manifold->Yposition) / (manifold->z[index] + manifold->Xposition)) + HALFWINHEIGHT, manifold->z[index]};
+            // printf("%f %f %f\n", projectedVertex.x, projectedVertex.y, projectedVertex.z);
+
+
+
+/*
             vec4f projectedVertex = {
                 ((((manifold->x[index] + manifold->Xposition) * f) / (camera->aspectRatio * (manifold->z[index] + manifold->Zposition))) + 1.0f) * (SCREENWIDTH / 2.0f),
                 ((1.0f - (((manifold->y[index] + manifold->Yposition) * f) / manifold->z[index])) * (SCREENHEIGHT / 2.0f)),
                 ((camera->farPlane + camera->nearPlane) * (manifold->z[index] + manifold->Zposition) + 2.0f * camera->farPlane * camera->nearPlane) / (camera->nearPlane - camera->farPlane),
                 1.0f
             };
-
+*/ 
             manifold->xProj[index] = projectedVertex.x;
             manifold->yProj[index] = projectedVertex.y;
-            manifold->zProj[index] = projectedVertex.z;
+            manifold->zProj[index] = projectedVertex.z; 
 
-           // printf("%f %f %f", manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition);
+/*
+            manifold->xProj[index] = manifold->x[index];
+            manifold->yProj[index] = manifold->y[index];
+            manifold->zProj[index] = manifold->z[index]; */
+
+            //printf("%f %f %f", manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition);
             //printf("\t%f %f %f\n", manifold->xProj[index], manifold->yProj[index], manifold->zProj[index]);
             //usleep(1000);
 
@@ -655,7 +692,6 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
             grayscaleRGB = (uint8_t) (255 - (132 * (1 - grayscaleCoefficient)));
 
             color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
-
 
             vertex1.x = manifold->xProj[index];
             vertex1.y = manifold->yProj[index];

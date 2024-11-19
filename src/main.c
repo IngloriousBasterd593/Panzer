@@ -33,7 +33,6 @@ int main(int argc, char** argv) {
 
 
 
-
     start = clock();
 
 
@@ -103,7 +102,7 @@ int main(int argc, char** argv) {
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int drawPrecision = 20;
+    int drawPrecision = 30;
 
 
 
@@ -150,9 +149,9 @@ int main(int argc, char** argv) {
         // Manifold_rotate(&torus, torusNormals, deltaRad, 'z');
 
 
-        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
-        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'y');
-        // Manifold_rotate(&sphere, sphereNormals, deltaRad, 'z');
+        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'x');
+        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'y');
+        Manifold_rotate(&sphere, sphereNormals, deltaRad, 'z');
       
 
 
