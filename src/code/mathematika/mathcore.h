@@ -36,20 +36,20 @@ vec3f crossProduct(vec3f* v1, vec3f* v2)
 
 
 
-float dotProductf3(vec3f* v1, vec3f* v2) 
+float dotProduct3f(vec3f* v1, vec3f* v2) 
 {
     return v1->x * v2->x + v1->y * v2->y + v1->z * v2->z;
 }
 
 
 
-float dotProductf2(vec2f* v1, vec2f* v2) 
+float dotProduct2f(vec2f* v1, vec2f* v2) 
 {
     return v1->x * v2->x + v1->y * v2->y;
 }
 
 
-
+/*
 void OrthographicProjectionMatrix4f(mat4f* result, Camera* camera) 
 {
     result->column[0] = (vec4f) { 2.0f / (right - left), 0.0f, 0.0f, 0.0f };
@@ -74,6 +74,94 @@ vec3f perspectiveProject(vec3f* vertex, Camera* camera)
 
     return (vec3f) {projectedVector.x, projectedVector.y, projectedVector.z};
 }
+*/
+
+
+
+
+void orthographicProjectionMatrix(mat4f* result, Camera* camera) 
+{
+
+    result->column[0] = (vec4f) { 2.0f / (right - left), 0.0f, 0.0f, 0.0f };
+    result->column[1] = (vec4f) { 0.0f, 2.0f / (top - bottom), 0.0f, 0.0f };
+    result->column[2] = (vec4f) { 0.0f, 0.0f, -2.0f / (far - near), 0.0f };
+    result->column[3] = (vec4f) { -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1.0f };
+
+    return;
+}
+
+
+
+
+void perspectiveProjectionMatrix(mat4f* result, Camera* camera) 
+{
+
+    memset(result->raw, 0, 16);
+    
+    float f = 1.0f / tanf(camera->FOV / 2.0f);
+    float nf = 1.0f / (camera->near - camera->far);
+
+    matrix.columns[0].x = f / camera->aspectRatio;
+    matrix.columns[1].y = f;
+    matrix.columns[2].z = (camera->far + camera->near) * nf;
+    matrix.columns[2].w = -1.0f;
+    matrix.columns[3].z = (2.0f * camera->far * camera->near) * nf;
+
+    return;
+}
+
+
+
+
+vec4f multiplyVectorByMatrix(mat4f* matrix, vec3f* vertex) 
+{
+
+    vec4f resultVector;
+
+    float x = vertex->x;
+    float y = vertex->y;
+    float z = vertex->z;
+    float w = 1.0f;
+
+    resultVector.x = matrix->column[0].x * x + matrix->column[1].x * y + matrix->column[2].x * z + matrix->column[3].x * w;
+    resultVector.y = matrix->column[0].y * x + matrix->column[1].y * y + matrix->column[2].y * z + matrix->column[3].y * w;
+    resultVector.z = matrix->column[0].z * x + matrix->column[1].z * y + matrix->column[2].z * z + matrix->column[3].z * w;
+    resultVector.w = matrix->column[0].w * x + matrix->column[1].w * y + matrix->column[2].w * z + matrix->column[3].w * w;
+
+    return resultVector;
+}
+
+
+
+
+void multiplyMatrixByMatrix(mat4f* m1, mat4f* m2, mat4f* resultMatrix)
+{
+   
+    resultMatrix->column[0].x = m1->column[0].x * m2->column[0].x + m1->column[1].x * m2->column[0].y + m1->column[2].x * m2->column[0].z + m1->column[3].x * m2->column[0].w;
+    resultMatrix->column[0].y = m1->column[0].y * m2->column[0].x + m1->column[1].y * m2->column[0].y + m1->column[2].y * m2->column[0].z + m1->column[3].y * m2->column[0].w;
+    resultMatrix->column[0].z = m1->column[0].z * m2->column[0].x + m1->column[1].z * m2->column[0].y + m1->column[2].z * m2->column[0].z + m1->column[3].z * m2->column[0].w;
+    resultMatrix->column[0].w = m1->column[0].w * m2->column[0].x + m1->column[1].w * m2->column[0].y + m1->column[2].w * m2->column[0].z + m1->column[3].w * m2->column[0].w;
+
+    resultMatrix->column[1].x = m1->column[0].x * m2->column[1].x + m1->column[1].x * m2->column[1].y + m1->column[2].x * m2->column[1].z + m1->column[3].x * m2->column[1].w;
+    resultMatrix->column[1].y = m1->column[0].y * m2->column[1].x + m1->column[1].y * m2->column[1].y + m1->column[2].y * m2->column[1].z + m1->column[3].y * m2->column[1].w;
+    resultMatrix->column[1].z = m1->column[0].z * m2->column[1].x + m1->column[1].z * m2->column[1].y + m1->column[2].z * m2->column[1].z + m1->column[3].z * m2->column[1].w;
+    resultMatrix->column[1].w = m1->column[0].w * m2->column[1].x + m1->column[1].w * m2->column[1].y + m1->column[2].w * m2->column[1].z + m1->column[3].w * m2->column[1].w;
+
+    resultMatrix->column[2].x = m1->column[0].x * m2->column[2].x + m1->column[1].x * m2->column[2].y + m1->column[2].x * m2->column[2].z + m1->column[3].x * m2->column[2].w;
+    resultMatrix->column[2].y = m1->column[0].y * m2->column[2].x + m1->column[1].y * m2->column[2].y + m1->column[2].y * m2->column[2].z + m1->column[3].y * m2->column[2].w;
+    resultMatrix->column[2].z = m1->column[0].z * m2->column[2].x + m1->column[1].z * m2->column[2].y + m1->column[2].z * m2->column[2].z + m1->column[3].z * m2->column[2].w;
+    resultMatrix->column[2].w = m1->column[0].w * m2->column[2].x + m1->column[1].w * m2->column[2].y + m1->column[2].w * m2->column[2].z + m1->column[3].w * m2->column[2].w;
+
+    resultMatrix->column[3].x = m1->column[0].x * m2->column[3].x + m1->column[1].x * m2->column[3].y + m1->column[2].x * m2->column[3].z + m1->column[3].x * m2->column[3].w;
+    resultMatrix->column[3].y = m1->column[0].y * m2->column[3].x + m1->column[1].y * m2->column[3].y + m1->column[2].y * m2->column[3].z + m1->column[3].y * m2->column[3].w;
+    resultMatrix->column[3].z = m1->column[0].z * m2->column[3].x + m1->column[1].z * m2->column[3].y + m1->column[2].z * m2->column[3].z + m1->column[3].z * m2->column[3].w;
+    resultMatrix->column[3].w = m1->column[0].w * m2->column[3].x + m1->column[1].w * m2->column[3].y + m1->column[2].w * m2->column[3].z + m1->column[3].w * m2->column[3].w;
+
+    return;
+}
+
+
+
 
 void sphere_init(Manifold* manifold, vec3f* manifoldNormals, int radius, int offsetX, int offsetY, int offsetZ) 
 {
@@ -132,7 +220,7 @@ void sphere_init(Manifold* manifold, vec3f* manifoldNormals, int radius, int off
         partialDerivativeV.y = (int)(10000 * manifold->y[index]) - (int)(10000 * manifold->y[indexPlusPixels]);
         partialDerivativeV.z = (int)(10000 * manifold->z[index]) - (int)(10000 * manifold->z[indexPlusPixels]);
         
-        normalVector = crossproduct(&partialDerivativeU, &partialDerivativeV);
+        normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
         manifoldNormals[index] = unit(&normalVector);
 
@@ -201,7 +289,7 @@ void torus_init(Manifold* manifold, vec3f* manifoldNormals, int innerRadius, int
         partialDerivativeV.y = (int)(10000 * manifold->y[index]) - (int)(10000 * manifold->y[indexPlusPixels]);
         partialDerivativeV.z = (int)(10000 * manifold->z[index]) - (int)(10000 * manifold->z[indexPlusPixels]);
         
-        normalVector = crossproduct(&partialDerivativeU, &partialDerivativeV);
+        normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
         manifoldNormals[index] = unit(&normalVector);
 

@@ -1,7 +1,7 @@
-#include "mathematika/mathcore.h"
-#include "mathematika/pipeline.h"
-#include "utilities/shared.h"
-#include "utilities/glutilities.h"
+#include "code/mathematika/mathcore.h"
+#include "code/mathematika/pipeline.h"
+#include "code/utilities/shared.h"
+#include "code/utilities/glutilities.h"
 
 
 int main(int argc, char** argv) {
@@ -20,12 +20,12 @@ int main(int argc, char** argv) {
 
     char* shaderProgram = malloc(BUFFLEN * sizeof(char));
     if(shaderProgram == NULL) {
-        fprintf(stderr, "couldnt get space forshader program");
+        fprintf(stderr, "couldnt get space for shader program");
         return 1;
     }
 
 
-    copyShaderSource("C:/Panzer/src/vertex.glsl", shaderProgram);
+    copyShaderSource("C:/Panzer/src/code/shaders", shaderProgram);
 
 
 

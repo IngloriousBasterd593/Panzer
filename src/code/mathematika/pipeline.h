@@ -1,5 +1,5 @@
-#ifndef COMMONH
-#define COMMONH
+#ifndef PIPELINE
+#define PIPELINE
 
 #include "../utilities/common.h"
 
@@ -156,36 +156,37 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
                 // perror("lmao");
                 continue; 
             }
-            */
+            
 
             vec3f projectedVertex = {((manifold->x[index] + manifold->Xposition) / manifold->z[index]) + HALFWINWIDTH, ((manifold->y[index] + manifold->Yposition) / (manifold->z[index] + manifold->Xposition)) + HALFWINHEIGHT, manifold->z[index]};
-            // printf("%f %f %f\n", projectedVertex.x, projectedVertex.y, projectedVertex.z);
+            printf("%f %f %f\n", projectedVertex.x, projectedVertex.y, projectedVertex.z);
 
 
 
-/*
             vec4f projectedVertex = {
                 ((((manifold->x[index] + manifold->Xposition) * f) / (camera->aspectRatio * (manifold->z[index] + manifold->Zposition))) + 1.0f) * (SCREENWIDTH / 2.0f),
                 ((1.0f - (((manifold->y[index] + manifold->Yposition) * f) / manifold->z[index])) * (SCREENHEIGHT / 2.0f)),
                 ((camera->farPlane + camera->nearPlane) * (manifold->z[index] + manifold->Zposition) + 2.0f * camera->farPlane * camera->nearPlane) / (camera->nearPlane - camera->farPlane),
                 1.0f
             };
-*/ 
-            manifold->xProj[index] = projectedVertex.x;
-            manifold->yProj[index] = projectedVertex.y;
-            manifold->zProj[index] = projectedVertex.z; 
 
-/*
             manifold->xProj[index] = manifold->x[index];
             manifold->yProj[index] = manifold->y[index];
-            manifold->zProj[index] = manifold->z[index]; */
+            manifold->zProj[index] = manifold->z[index]; 
 
-            //printf("%f %f %f", manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition);
-            //printf("\t%f %f %f\n", manifold->xProj[index], manifold->yProj[index], manifold->zProj[index]);
-            //usleep(1000);
+            printf("%f %f %f", manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition);
+            printf("\t%f %f %f\n", manifold->xProj[index], manifold->yProj[index], manifold->zProj[index]);
+            usleep(1000);
+*/
 
+
+
+        manifold->xProj[index] = manifold->x[index];
+        manifold->yProj[index] = manifold->y[index];
+        manifold->zProj[index] = manifold->z[index]; 
         }
     }
+
 
 
     for(int q = 0; q < PIXELS; q++) 
@@ -194,7 +195,7 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
         {
             index = q * PIXELS + l;
 
-            if(dotproductf3(&camera->POV, &manifoldNormals[index]) < 0) {
+            if(dotProduct3f(&camera->POV, &manifoldNormals[index]) < 0) {
                 continue;
             }
             
@@ -205,7 +206,7 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
             indexPlusPixels = nextQ * PIXELS + l;
             indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
 
-            grayscaleCoefficient = (dotproduct(&manifoldNormals[index], &camera->lightingDirectionVector));
+            grayscaleCoefficient = (dotProduct3f(&manifoldNormals[index], &camera->lightingDirectionVector));
 
             grayscaleRGB = (uint8_t) (255 - (132 * (1 - grayscaleCoefficient)));
 

@@ -98,6 +98,8 @@ typedef struct {
     float aspectRatio;
     float nearPlane;
     float farPlane;
+    float far;
+    float near;
 } Camera;
 
 
