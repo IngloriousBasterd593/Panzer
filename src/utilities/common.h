@@ -57,8 +57,10 @@ typedef struct {
     float w;
 } vec4f;
 
-typedef struct {
+typedef union {
     float mat[4][4];
+    float raw[16];
+    vec4f column[4];
 } mat4f;
 
 typedef struct {

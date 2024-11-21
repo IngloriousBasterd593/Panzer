@@ -194,7 +194,7 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
         {
             index = q * PIXELS + l;
 
-            if(dotproduct(&camera->POV, &manifoldNormals[index]) < 0) {
+            if(dotproductf3(&camera->POV, &manifoldNormals[index]) < 0) {
                 continue;
             }
             

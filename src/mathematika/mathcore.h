@@ -25,7 +25,7 @@ vec3f unit(vec3f* v)
 
 
 
-vec3f crossproduct(vec3f* v1, vec3f* v2) 
+vec3f crossProduct(vec3f* v1, vec3f* v2) 
 {
     return (vec3f) {
                     v1->y * v2->z - v1->z * v2->y, 
@@ -36,20 +36,28 @@ vec3f crossproduct(vec3f* v1, vec3f* v2)
 
 
 
-float dotproduct(vec3f* v1, vec3f* v2) 
+float dotProductf3(vec3f* v1, vec3f* v2) 
 {
     return v1->x * v2->x + v1->y * v2->y + v1->z * v2->z;
 }
 
 
 
-mat4f* OrthographicProjectionMatrix4f(float left, float right, float bottom, float top, float nearZ, float farZ, mat4f* result) // applies to the entire matrix
+float dotProductf2(vec2f* v1, vec2f* v2) 
 {
-    result->vecRows[0] = (Vector4f){ 2.0/(right-left), 0.0, 0.0, -(right+left)/(right-left) };
-    result->vecRows[1] = (Vector4f){ 0.0, 2.0/(top-bottom), 0.0, -(top+bottom)/(top-bottom) };
-    result->vecRows[2] = (Vector4f){ 0.0, 0.0, -2.0/(farZ-nearZ), -(farZ+nearZ)/(farZ-nearZ) };
-    result->vecRows[3] = (Vector4f){ 0.0, 0.0, 0.0, 1.0 };
-    return result;
+    return v1->x * v2->x + v1->y * v2->y;
+}
+
+
+
+void OrthographicProjectionMatrix4f(mat4f* result, Camera* camera) 
+{
+    result->column[0] = (vec4f) { 2.0f / (right - left), 0.0f, 0.0f, 0.0f };
+    result->column[1] = (vec4f) { 0.0f, 2.0f / (top - bottom), 0.0f, 0.0f };
+    result->column[2] = (vec4f) { 0.0f, 0.0f, -2.0/(farZ-nearZ), 0.0f };
+    result->column[3] = (vec4f) { -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(farZ + nearZ) / (farZ - nearZ), 1.0f };
+
+    return;
 }
 
 
@@ -76,9 +84,9 @@ void sphere_init(Manifold* manifold, vec3f* manifoldNormals, int radius, int off
         return;
     }
 
-    manifold->Xposition = HALFWINWIDTH;
-    manifold->Yposition = HALFWINHEIGHT;
-    manifold->Zposition = 2000;
+    manifold->Xposition = offsetX;
+    manifold->Yposition = offsetY;
+    manifold->Zposition = offsetZ;
     
     int index;
     int indexPlusPixels;
@@ -145,9 +153,9 @@ void torus_init(Manifold* manifold, vec3f* manifoldNormals, int innerRadius, int
         return;
     }
 
-    manifold->Xposition = HALFWINWIDTH;
-    manifold->Yposition = HALFWINHEIGHT;
-    manifold->Zposition = 700;
+    manifold->Xposition = offsetX;
+    manifold->Yposition = offsetY;
+    manifold->Zposition = offsetZ;
 
     vec3f normalVector;
     vec3f partialDerivativeU;
