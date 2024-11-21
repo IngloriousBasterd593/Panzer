@@ -25,7 +25,7 @@
 
 // macros
 
-#define PIXELS 160                                  // loop counter for 3 dimensional shape access    
+#define PIXELS 100                                  // loop counter for 3 dimensional shape access    
 #define VERTICES (PIXELS * PIXELS)                  // number of vertices for each object
 #define PI M_PI
 #define TWOPI (2 * PI)
@@ -98,8 +98,10 @@ typedef struct {
     float aspectRatio;
     float nearPlane;
     float farPlane;
-    float far;
-    float near;
+    float right;
+    float left;
+    float top;
+    float bottom;
 } Camera;
 
 

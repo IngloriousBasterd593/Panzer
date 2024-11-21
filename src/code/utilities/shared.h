@@ -129,4 +129,41 @@ int get_space(Manifold* manifold)
     return 0;
 }
 
+
+
+void printVector3f(vec3f vector) 
+{
+    printf("%f %f %f\t", vector.x, vector.y, vector.z);
+
+    return;
+}
+
+
+
+void printVector4f(vec4f vector) 
+{
+    printf("%f %f %f %f\t", vector.x, vector.y, vector.z, vector.w);
+
+    return;
+}
+
+
+
+void printMatrix4f(mat4f mat) 
+{
+    for(int i = 0; i < 4; i++) 
+    {
+        for(int j = 0; j < 4; j++) {
+            printf("[ %f ]", mat.mat[j][i]);
+        }
+        printf("\n");
+    }
+
+    printf("\n");
+
+    return;
+}
+
+
+
 #endif

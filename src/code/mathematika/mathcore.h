@@ -2,25 +2,21 @@
 #define MATHCORE
 
 #include "../utilities/common.h"
+#include "../utilities/shared.h"
 
-vec3f unit(vec3f* v) 
+
+vec3f unit3f(vec3f* v) 
 {
 
     float magnitude = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
-    vec3f normalized;
 
     if(magnitude == 0.0f) 
     {
         // fprintf(stderr, "magnitude zero\n");
-        normalized.x = normalized.y = normalized.z = 0;
-        return normalized;
+        return (vec3f) {0, 0, 0};
     } 
 
-    normalized.x = v->x / magnitude;
-    normalized.y = v->y / magnitude;
-    normalized.z = v->z / magnitude;
-
-    return normalized;
+    return (vec3f) {v->x / magnitude, v->y / magnitude, v->z / magnitude};
 }
 
 
@@ -81,11 +77,12 @@ vec3f perspectiveProject(vec3f* vertex, Camera* camera)
 
 void orthographicProjectionMatrix(mat4f* result, Camera* camera) 
 {
+    memset(result->raw, 0, 64);
 
-    result->column[0] = (vec4f) { 2.0f / (right - left), 0.0f, 0.0f, 0.0f };
-    result->column[1] = (vec4f) { 0.0f, 2.0f / (top - bottom), 0.0f, 0.0f };
-    result->column[2] = (vec4f) { 0.0f, 0.0f, -2.0f / (far - near), 0.0f };
-    result->column[3] = (vec4f) { -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1.0f };
+    result->column[0] = (vec4f) { 2.0f / (camera->right - camera->left), 0.0f, 0.0f, 0.0f };
+    result->column[1] = (vec4f) { 0.0f, 2.0f / (camera->top - camera->bottom), 0.0f, 0.0f };
+    result->column[2] = (vec4f) { 0.0f, 0.0f, -2.0f / (camera->farPlane - camera->nearPlane), 0.0f };
+    result->column[3] = (vec4f) { -(camera->right + camera->left) / (camera->right - camera->left), -(camera->top + camera->bottom) / (camera->top - camera->bottom), -(camera->farPlane + camera->nearPlane) / (camera->farPlane - camera->nearPlane), 1.0f };
 
     return;
 }
@@ -96,16 +93,16 @@ void orthographicProjectionMatrix(mat4f* result, Camera* camera)
 void perspectiveProjectionMatrix(mat4f* result, Camera* camera) 
 {
 
-    memset(result->raw, 0, 16);
+    memset(result->raw, 0, 64);
     
     float f = 1.0f / tanf(camera->FOV / 2.0f);
-    float nf = 1.0f / (camera->near - camera->far);
+    float nf = 1.0f / (camera->nearPlane - camera->farPlane);
 
-    matrix.columns[0].x = f / camera->aspectRatio;
-    matrix.columns[1].y = f;
-    matrix.columns[2].z = (camera->far + camera->near) * nf;
-    matrix.columns[2].w = -1.0f;
-    matrix.columns[3].z = (2.0f * camera->far * camera->near) * nf;
+    result->column[0].x = f / camera->aspectRatio;
+    result->column[1].y = f;
+    result->column[2].z = (camera->farPlane + camera->nearPlane) * nf;
+    result->column[2].w = -1.0f;
+    result->column[3].z = (2.0f * camera->farPlane * camera->nearPlane) * nf;
 
     return;
 }
@@ -113,22 +110,20 @@ void perspectiveProjectionMatrix(mat4f* result, Camera* camera)
 
 
 
-vec4f multiplyVectorByMatrix(mat4f* matrix, vec3f* vertex) 
+void multiplyVectorByMatrix(mat4f* matrix, vec4f* vertex) 
 {
-
-    vec4f resultVector;
 
     float x = vertex->x;
     float y = vertex->y;
     float z = vertex->z;
     float w = 1.0f;
 
-    resultVector.x = matrix->column[0].x * x + matrix->column[1].x * y + matrix->column[2].x * z + matrix->column[3].x * w;
-    resultVector.y = matrix->column[0].y * x + matrix->column[1].y * y + matrix->column[2].y * z + matrix->column[3].y * w;
-    resultVector.z = matrix->column[0].z * x + matrix->column[1].z * y + matrix->column[2].z * z + matrix->column[3].z * w;
-    resultVector.w = matrix->column[0].w * x + matrix->column[1].w * y + matrix->column[2].w * z + matrix->column[3].w * w;
+    vertex->x = matrix->column[0].x * x + matrix->column[1].x * y + matrix->column[2].x * z + matrix->column[3].x * w;
+    vertex->y = matrix->column[0].y * x + matrix->column[1].y * y + matrix->column[2].y * z + matrix->column[3].y * w;
+    vertex->z = matrix->column[0].z * x + matrix->column[1].z * y + matrix->column[2].z * z + matrix->column[3].z * w;
+    vertex->w = matrix->column[0].w * x + matrix->column[1].w * y + matrix->column[2].w * z + matrix->column[3].w * w;
 
-    return resultVector;
+    return;
 }
 
 
@@ -222,7 +217,7 @@ void sphere_init(Manifold* manifold, vec3f* manifoldNormals, int radius, int off
         
         normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
-        manifoldNormals[index] = unit(&normalVector);
+        manifoldNormals[index] = unit3f(&normalVector);
 
         }
     }
@@ -291,7 +286,7 @@ void torus_init(Manifold* manifold, vec3f* manifoldNormals, int innerRadius, int
         
         normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
-        manifoldNormals[index] = unit(&normalVector);
+        manifoldNormals[index] = unit3f(&normalVector);
 
         }
     }

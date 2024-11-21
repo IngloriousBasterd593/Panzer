@@ -8,19 +8,19 @@
 void lineBresenham(Manifold* manifold, unsigned int* frameColors, vec2f vertexStart, vec2f vertexEnd, unsigned int color) 
 {
     
-    short x1 = vertexStart.x;
-    short y1 = vertexStart.y;
-    short x2 = vertexEnd.x;
-    short y2 = vertexEnd.y;
+    int x1 = vertexStart.x;
+    int y1 = vertexStart.y;
+    int x2 = vertexEnd.x;
+    int y2 = vertexEnd.y;
 
-    short dx = abs(x2 - x1);
-    short dy = abs(y2 - y1);
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
 
-    short stepX = (x1 < x2) ? 1 : -1;
-    short stepY = (y1 < y2) ? 1 : -1;
+    int stepX = (x1 < x2) ? 1 : -1;
+    int stepY = (y1 < y2) ? 1 : -1;
 
-    short error = dx - dy;
-    short error2;
+    int error = dx - dy;
+    int error2;
 
     while(1) 
     {
@@ -65,19 +65,16 @@ void fillTriangle(Manifold* manifold, unsigned int* frameColors, vec2f baseVerte
     float dx2 = (centralVertex.x - baseVertex2.x) / trianglePrecision;
     float dy2 = (centralVertex.y - baseVertex2.y) / trianglePrecision;
 
-    vec2f point1;
-    vec2f point2;
-
     for (int i = 0; i < trianglePrecision; i++) 
     {
 
-        point1.x = baseVertex1.x + dx1;
-        point1.y = baseVertex1.y + dy1;
+        baseVertex1.x += dx1;
+        baseVertex1.y += dy1;
 
-        point2.x = baseVertex2.x + dx2;
-        point2.y = baseVertex2.y + dy2;
+        baseVertex2.x += dx2;
+        baseVertex2.y += dy2;
 
-        lineBresenham(manifold, frameColors, point1, point2, color);
+        lineBresenham(manifold, frameColors, baseVertex1, baseVertex2, color);
 
     }
 
@@ -100,7 +97,7 @@ void fillRectangle(Manifold* manifold, unsigned int* frameColors, vec2f vertexA,
     float dxL = (vertexB.x - vertexA.x) / drawPrecision;
     float dyL = (vertexB.y - vertexA.y) / drawPrecision;
 
-    for(int i = 0; i <= drawPrecision; i++) 
+    for(int i = 0; i < drawPrecision; i++) 
     {
 
         vertexA.x += dxU;
@@ -142,6 +139,13 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
     vec2f vertex2;
     vec2f vertexUpper1;
     vec2f vertexUpper2;
+    mat4f orthoMatrix;
+    mat4f perspectiveMatrix;
+    mat4f matrix;
+
+    orthographicProjectionMatrix(&orthoMatrix, camera);
+    perspectiveProjectionMatrix(&perspectiveMatrix, camera);
+    multiplyMatrixByMatrix(&orthoMatrix, &perspectiveMatrix, &matrix);
 
     // perform perspective projection
     for(int q = 0; q < PIXELS; q++) 
@@ -179,11 +183,19 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
             usleep(1000);
 */
 
+        vec4f vertex = {manifold->xProj[index], manifold->yProj[index], manifold->zProj[index], 0.0f};
+
+        multiplyVectorByMatrix(&matrix, &vertex);
+
+        manifold->xProj[index] = vertex.x;
+        manifold->yProj[index] = vertex.y;
+        manifold->zProj[index] = vertex.z; 
+
+        // printf("%f %f %f\t%f %f %f\n", vertex.x, vertex.y, vertex.z, manifold->xProj[index], manifold->yProj[index], manifold->zProj[index]);
+
+        // printMatrix4f(matrix);
 
 
-        manifold->xProj[index] = manifold->x[index];
-        manifold->yProj[index] = manifold->y[index];
-        manifold->zProj[index] = manifold->z[index]; 
         }
     }
 
@@ -208,7 +220,7 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
 
             grayscaleCoefficient = (dotProduct3f(&manifoldNormals[index], &camera->lightingDirectionVector));
 
-            grayscaleRGB = (uint8_t) (255 - (132 * (1 - grayscaleCoefficient)));
+            grayscaleRGB = (unsigned char) (255 - (132 * (1 - grayscaleCoefficient)));
 
             color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
 
@@ -238,10 +250,10 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
             vertexUpper2.y = manifold->y[indexPlusPixelsPlusOne]; 
 */
 
-            fillRectangle(manifold, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
+            // fillRectangle(manifold, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
 
-            // fillTriangle(frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
-            // fillTriangle(frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
+            fillTriangle(manifold, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
+            fillTriangle(manifold, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
 
         }
     }
