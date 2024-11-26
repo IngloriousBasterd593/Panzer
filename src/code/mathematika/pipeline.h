@@ -4,7 +4,6 @@
 #include "../utilities/common.h"
 
 
-
 void lineBresenham(Manifold* manifold, unsigned int* frameColors, vec2f vertexStart, vec2f vertexEnd, unsigned int color) 
 {
     
@@ -133,7 +132,6 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
     int grayscaleRGB;
     float grayscaleCoefficient;
     unsigned int color;
-    float f = 1.0f / tanf(camera->FOV / 2.0f);
 
     vec2f vertex1;
     vec2f vertex2;
@@ -143,9 +141,7 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
     mat4f perspectiveMatrix;
     mat4f matrix;
 
-    orthographicProjectionMatrix(&orthoMatrix, camera);
     perspectiveProjectionMatrix(&perspectiveMatrix, camera);
-    multiplyMatrixByMatrix(&orthoMatrix, &perspectiveMatrix, &matrix);
 
     // perform perspective projection
     for(int q = 0; q < PIXELS; q++) 
@@ -183,17 +179,16 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
             usleep(1000);
 */
 
-        vec4f vertex = {manifold->xProj[index], manifold->yProj[index], manifold->zProj[index], 0.0f};
+        vec4f vertex = { manifold->x[index], manifold->y[index], manifold->z[index] + manifold->Zposition, 1.0f };
 
-        multiplyVectorByMatrix(&matrix, &vertex);
+        multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
 
-        manifold->xProj[index] = vertex.x;
-        manifold->yProj[index] = vertex.y;
-        manifold->zProj[index] = vertex.z; 
 
-        // printf("%f %f %f\t%f %f %f\n", vertex.x, vertex.y, vertex.z, manifold->xProj[index], manifold->yProj[index], manifold->zProj[index]);
+        manifold->xProj[index] = (((vertex.x / vertex.w) + 1.0f) * HALFWINWIDTH) + manifold->Xposition;
+        manifold->yProj[index] = ((1.0f - (vertex.y / vertex.w)) * HALFWINHEIGHT) + manifold->Yposition;
+        manifold->zProj[index] = vertex.z / vertex.w;
 
-        // printMatrix4f(matrix);
+        printf("%f %f\n", manifold->xProj[index], manifold->yProj[index]);
 
 
         }

@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     vec3f lightPerspectiveVector = {0, 0, 1};
     vec3f viewVector = {0, 0, 1};
 
-    Camera camera = {viewVector, PI / 1.2, viewVector, SCREENWIDTH / SCREENHEIGHT, 0.1, 1, 10, 10, 10, 10};
+    Camera camera = {viewVector, PI / 3, viewVector, SCREENWIDTH / SCREENHEIGHT, 0.1, 1, 10, 20, 10, 20};
 
     unsigned int* frameColors = NULL;
 
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
   
   
     // torus_init(&torus, torusNormals, 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
-    sphere_init(&sphere, sphereNormals, 30, HALFWINWIDTH, HALFWINHEIGHT, 1000);
+    sphere_init(&sphere, sphereNormals, 30, HALFWINWIDTH, HALFWINHEIGHT, 300);
 
 
     // Manifold_draw(&torus, torusNormals, &camera, frameColors, 0, 0, 20);

@@ -142,7 +142,7 @@ void printVector3f(vec3f vector)
 
 void printVector4f(vec4f vector) 
 {
-    printf("%f %f %f %f\t", vector.x, vector.y, vector.z, vector.w);
+    printf("%f %f %f %f\n", vector.x, vector.y, vector.z, vector.w);
 
     return;
 }

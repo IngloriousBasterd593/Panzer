@@ -101,7 +101,7 @@ void perspectiveProjectionMatrix(mat4f* result, Camera* camera)
     result->column[0].x = f / camera->aspectRatio;
     result->column[1].y = f;
     result->column[2].z = (camera->farPlane + camera->nearPlane) * nf;
-    result->column[2].w = -1.0f;
+    result->column[2].w = 1.0f;
     result->column[3].z = (2.0f * camera->farPlane * camera->nearPlane) * nf;
 
     return;
