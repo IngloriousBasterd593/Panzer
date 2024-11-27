@@ -157,6 +157,17 @@ void multiplyMatrixByMatrix(mat4f* m1, mat4f* m2, mat4f* resultMatrix)
 
 
 
+vec3f perspectiveNdcToScreen(Manifold* manifold, vec4f* vertex)
+{
+    return (vec3f) { 
+        (((vertex->x / vertex->w) + 1.0f) * HALFWINWIDTH) + manifold->Xposition,
+        ((1.0f - (vertex->y / vertex->w)) * HALFWINHEIGHT) + manifold->Yposition,
+        vertex->z / vertex->w
+    };
+}
+
+
+
 
 void sphere_init(Manifold* manifold, vec3f* manifoldNormals, int radius, int offsetX, int offsetY, int offsetZ) 
 {

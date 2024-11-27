@@ -182,13 +182,13 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
         vec4f vertex = { manifold->x[index], manifold->y[index], manifold->z[index] + manifold->Zposition, 1.0f };
 
         multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
+        vec3f projVertex = perspectiveNdcToScreen(manifold, &vertex);
 
+        manifold->xProj[index] = projVertex.x;
+        manifold->yProj[index] = projVertex.y + 300;
+        manifold->zProj[index] = projVertex.z;
 
-        manifold->xProj[index] = (((vertex.x / vertex.w) + 1.0f) * HALFWINWIDTH) + manifold->Xposition;
-        manifold->yProj[index] = ((1.0f - (vertex.y / vertex.w)) * HALFWINHEIGHT) + manifold->Yposition;
-        manifold->zProj[index] = vertex.z / vertex.w;
-
-        printf("%f %f\n", manifold->xProj[index], manifold->yProj[index]);
+        //printf("%f %f\n", manifold->xProj[index], manifold->yProj[index]);
 
 
         }
