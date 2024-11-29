@@ -133,7 +133,7 @@ int get_space(Manifold* manifold)
 
 void printVector3f(vec3f vector) 
 {
-    printf("%f %f %f\t", vector.x, vector.y, vector.z);
+    printf("%f %f %f\n", vector.x, vector.y, vector.z);
 
     return;
 }

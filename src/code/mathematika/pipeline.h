@@ -179,14 +179,16 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
             usleep(1000);
 */
 
-        vec4f vertex = { manifold->x[index], manifold->y[index], manifold->z[index] + manifold->Zposition, 1.0f };
+        vec4f vertex = { manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition, 1.0f };
 
         multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
         vec3f projVertex = perspectiveNdcToScreen(manifold, &vertex);
 
         manifold->xProj[index] = projVertex.x;
-        manifold->yProj[index] = projVertex.y + 300;
+        manifold->yProj[index] = projVertex.y;
         manifold->zProj[index] = projVertex.z;
+
+        // printVector3f(projVertex);
 
         //printf("%f %f\n", manifold->xProj[index], manifold->yProj[index]);
 
