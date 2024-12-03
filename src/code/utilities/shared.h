@@ -20,17 +20,16 @@
 
 int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture, const char* name, int width, int height) 
 {
-
     if(SDL_Init(SDL_INIT_VIDEO) < 0) 
     {
-        fprintf(stderr, "couldnt init sdl\n");
+        fprintf(stderr, "couldn't init SDL\n");
         return 1;
     }
 
     *window = SDL_CreateWindow(name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
     if(*window == NULL) 
     {
-        fprintf(stderr, "couldnt init window\n");
+        fprintf(stderr, "couldn't init window\n");
         SDL_Quit();
         return 1;
     }
@@ -38,7 +37,7 @@ int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture
     *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);
     if(*renderer == NULL) 
     {
-        fprintf(stderr, "couldnt init renderer\n");
+        fprintf(stderr, "couldn't init renderer\n");
         SDL_DestroyWindow(*window);
         SDL_Quit();
         return 1;
@@ -47,13 +46,12 @@ int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture
     *texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
     if(*texture == NULL) 
     {
-        fprintf(stderr, "couldnt init texture\n");
+        fprintf(stderr, "couldn't init texture\n");
         SDL_DestroyWindow(*window);
         SDL_DestroyRenderer(*renderer);
         SDL_Quit();
         return 1;
     }
-
 
     SDL_SetRenderDrawColor(*renderer, 255, 255, 255, 255);
     SDL_RenderClear(*renderer);
@@ -64,70 +62,68 @@ int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture
     return 0;
 }
 
-
-
-int get_space(Manifold* manifold) 
+int get_space(Mesh* mesh) 
 {
-
-    manifold->x = malloc(VERTICES * sizeof(float));
-    if(manifold->x == NULL) 
+    mesh->x = malloc(VERTICES * sizeof(float));
+    if(mesh->x == NULL) 
     {
-        fprintf(stderr, "couldnt init manifold\n");
+        fprintf(stderr, "couldn't init mesh\n");
         return 1;
     }
 
-    manifold->y = malloc(VERTICES * sizeof(float));
-    if(manifold->y == NULL) 
+    mesh->y = malloc(VERTICES * sizeof(float));
+    if(mesh->y == NULL) 
     {
-        free(manifold->x);
-        fprintf(stderr, "couldnt init manifold\n");
+        free(mesh->x);
+        fprintf(stderr, "couldn't init mesh\n");
         return 1;
     }
 
-    manifold->z = malloc(VERTICES * sizeof(float));
-    if(manifold->z == NULL) 
+    mesh->z = malloc(VERTICES * sizeof(float));
+    if(mesh->z == NULL) 
     {
-        free(manifold->x);
-        free(manifold->y);
-        fprintf(stderr, "couldnt init manifold\n");
+        free(mesh->x);
+        free(mesh->y);
+        fprintf(stderr, "couldn't init mesh\n");
         return 1;
     }
 
-    manifold->xProj = malloc(VERTICES * sizeof(float));
-    if(manifold->xProj == NULL) 
+    mesh->xProj = malloc(VERTICES * sizeof(float));
+    if(mesh->xProj == NULL) 
     {
-        free(manifold->x);
-        free(manifold->y);
-        free(manifold->z);
-        fprintf(stderr, "couldnt init manifold\n");
+        free(mesh->x);
+        free(mesh->y);
+        free(mesh->z);
+        fprintf(stderr, "couldn't init mesh\n");
         return 1;
     }
 
-    manifold->yProj = malloc(VERTICES * sizeof(float));
-    if(manifold->yProj == NULL) 
+    mesh->yProj = malloc(VERTICES * sizeof(float));
+    if(mesh->yProj == NULL) 
     {
-        free(manifold->x);
-        free(manifold->y);
-        free(manifold->z);
-        free(manifold->xProj);
-        fprintf(stderr, "couldnt init manifold\n");
+        free(mesh->x);
+        free(mesh->y);
+        free(mesh->z);
+        free(mesh->xProj);
+        fprintf(stderr, "couldn't init mesh\n");
         return 1;
     }
 
-    manifold->zProj = malloc(VERTICES * sizeof(float));
-    if(manifold->zProj == NULL) 
+    mesh->zProj = malloc(VERTICES * sizeof(float));
+    if(mesh->zProj == NULL) 
     {
-        free(manifold->x);
-        free(manifold->y);
-        free(manifold->z);
-        free(manifold->xProj);
-        free(manifold->yProj);
-        fprintf(stderr, "couldnt init manifold\n");
+        free(mesh->x);
+        free(mesh->y);
+        free(mesh->z);
+        free(mesh->xProj);
+        free(mesh->yProj);
+        fprintf(stderr, "couldn't init mesh\n");
         return 1;
     }
 
     return 0;
 }
+
 
 
 

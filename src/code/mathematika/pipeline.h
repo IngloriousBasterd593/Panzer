@@ -3,10 +3,8 @@
 
 #include "../utilities/common.h"
 
-
-void lineBresenham(Manifold* manifold, unsigned int* frameColors, vec2f vertexStart, vec2f vertexEnd, unsigned int color) 
+void lineBresenham(Mesh* mesh, unsigned int* frameColors, vec2f vertexStart, vec2f vertexEnd, unsigned int color) 
 {
-    
     int x1 = vertexStart.x;
     int y1 = vertexStart.y;
     int x2 = vertexEnd.x;
@@ -24,12 +22,12 @@ void lineBresenham(Manifold* manifold, unsigned int* frameColors, vec2f vertexSt
     while(1) 
     {
         // not out of bounds, trust me
-        if(((y1 + manifold->Yposition) * SCREENWIDTH) + x1 + manifold->Xposition > SCREENSIZE || ((y1 + manifold->Yposition) * SCREENWIDTH) + x1 + manifold->Xposition < 0) 
+        if(((y1 + mesh->Yposition) * SCREENWIDTH) + x1 + mesh->Xposition > SCREENSIZE || ((y1 + mesh->Yposition) * SCREENWIDTH) + x1 + mesh->Xposition < 0) 
         {
             break;
         }
 
-        frameColors[((y1 + manifold->Yposition) * SCREENWIDTH) + x1 + manifold->Xposition] = color;
+        frameColors[((y1 + mesh->Yposition) * SCREENWIDTH) + x1 + mesh->Xposition] = color;
 
         if(x1 == x2 && y1 == y2) 
         {
@@ -54,11 +52,8 @@ void lineBresenham(Manifold* manifold, unsigned int* frameColors, vec2f vertexSt
     return;
 }
 
-
-
-void fillTriangle(Manifold* manifold, unsigned int* frameColors, vec2f baseVertex1, vec2f baseVertex2, vec2f centralVertex, int trianglePrecision, unsigned int color) 
+void fillTriangle(Mesh* mesh, unsigned int* frameColors, vec2f baseVertex1, vec2f baseVertex2, vec2f centralVertex, int trianglePrecision, unsigned int color) 
 {
-
     float dx1 = (centralVertex.x - baseVertex1.x) / trianglePrecision;
     float dy1 = (centralVertex.y - baseVertex1.y) / trianglePrecision;
     float dx2 = (centralVertex.x - baseVertex2.x) / trianglePrecision;
@@ -66,31 +61,20 @@ void fillTriangle(Manifold* manifold, unsigned int* frameColors, vec2f baseVerte
 
     for (int i = 0; i < trianglePrecision; i++) 
     {
-
         baseVertex1.x += dx1;
         baseVertex1.y += dy1;
 
         baseVertex2.x += dx2;
         baseVertex2.y += dy2;
 
-        lineBresenham(manifold, frameColors, baseVertex1, baseVertex2, color);
-
+        lineBresenham(mesh, frameColors, baseVertex1, baseVertex2, color);
     }
 
     return;
 }
 
-
-
-void fillRectangle(Manifold* manifold, unsigned int* frameColors, vec2f vertexA, vec2f vertexB, vec2f vertexC, vec2f vertexD, int drawPrecision, unsigned int color) 
+void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f vertexB, vec2f vertexC, vec2f vertexD, int drawPrecision, unsigned int color) 
 {
-    /*
-    if(drawPrecision <= 0) 
-    {
-        fprintf(stderr, "write a correct drawprecision, bozo\n");
-        return;
-    } */
-
     float dxU = (vertexD.x - vertexC.x) / drawPrecision;
     float dyU = (vertexD.y - vertexC.y) / drawPrecision;
     float dxL = (vertexB.x - vertexA.x) / drawPrecision;
@@ -98,24 +82,40 @@ void fillRectangle(Manifold* manifold, unsigned int* frameColors, vec2f vertexA,
 
     for(int i = 0; i < drawPrecision; i++) 
     {
-
         vertexA.x += dxU;
         vertexA.y += dyU;
 
         vertexC.x += dxL;
         vertexC.y += dyL;
 
-        lineBresenham(manifold, frameColors, vertexA, vertexC, color);
+        lineBresenham(mesh, frameColors, vertexA, vertexC, color);
     }
 
     return;
 }
 
-
-
-void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, unsigned int* frameColors, int drawPrecision) 
+int checkForBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
 {
+    if(mesh1->boundingBox.xmax < mesh2->boundingBox.xmin || mesh1->boundingBox.xmin > mesh2->boundingBox.xmax) 
+    {
+        return false;
+    }
 
+    if(mesh1->boundingBox.ymax < mesh2->boundingBox.ymin || mesh1->boundingBox.ymin > mesh2->boundingBox.ymax) 
+    {
+        return false;
+    }
+
+    if(mesh1->boundingBox.zmax < mesh2->boundingBox.zmin || mesh1->boundingBox.zmin > mesh2->boundingBox.zmax) 
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* frameColors, int drawPrecision) 
+{
     if(drawPrecision < 1) 
     {
         fprintf(stderr, "write a correct drawprecision, bozo\n");
@@ -143,71 +143,33 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
 
     perspectiveProjectionMatrix(&perspectiveMatrix, camera);
 
-    // perform perspective projection
     for(int q = 0; q < PIXELS; q++) 
     {
         for(int l = 0; l < PIXELS; l++) 
         {
             index = q * PIXELS + l;
 
-            /*
-            if (manifold->z[index] <= 0.1f) 
-            {
-                // perror("lmao");
-                continue; 
-            }
-            
+            vec4f vertex = { mesh->x[index] + mesh->Xposition, mesh->y[index] + mesh->Yposition, mesh->z[index] + mesh->Zposition, 1.0f };
 
-            vec3f projectedVertex = {((manifold->x[index] + manifold->Xposition) / manifold->z[index]) + HALFWINWIDTH, ((manifold->y[index] + manifold->Yposition) / (manifold->z[index] + manifold->Xposition)) + HALFWINHEIGHT, manifold->z[index]};
-            printf("%f %f %f\n", projectedVertex.x, projectedVertex.y, projectedVertex.z);
+            multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
+            vec3f projVertex = perspectiveNdcToScreen(mesh, &vertex);
 
-
-
-            vec4f projectedVertex = {
-                ((((manifold->x[index] + manifold->Xposition) * f) / (camera->aspectRatio * (manifold->z[index] + manifold->Zposition))) + 1.0f) * (SCREENWIDTH / 2.0f),
-                ((1.0f - (((manifold->y[index] + manifold->Yposition) * f) / manifold->z[index])) * (SCREENHEIGHT / 2.0f)),
-                ((camera->farPlane + camera->nearPlane) * (manifold->z[index] + manifold->Zposition) + 2.0f * camera->farPlane * camera->nearPlane) / (camera->nearPlane - camera->farPlane),
-                1.0f
-            };
-
-            manifold->xProj[index] = manifold->x[index];
-            manifold->yProj[index] = manifold->y[index];
-            manifold->zProj[index] = manifold->z[index]; 
-
-            printf("%f %f %f", manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition);
-            printf("\t%f %f %f\n", manifold->xProj[index], manifold->yProj[index], manifold->zProj[index]);
-            usleep(1000);
-*/
-
-        vec4f vertex = { manifold->x[index] + manifold->Xposition, manifold->y[index] + manifold->Yposition, manifold->z[index] + manifold->Zposition, 1.0f };
-
-        multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
-        vec3f projVertex = perspectiveNdcToScreen(manifold, &vertex);
-
-        manifold->xProj[index] = projVertex.x;
-        manifold->yProj[index] = projVertex.y;
-        manifold->zProj[index] = projVertex.z;
-
-        // printVector3f(projVertex);
-
-        //printf("%f %f\n", manifold->xProj[index], manifold->yProj[index]);
-
-
+            mesh->xProj[index] = projVertex.x;
+            mesh->yProj[index] = projVertex.y;
+            mesh->zProj[index] = projVertex.z;
         }
     }
 
-
-
     for(int q = 0; q < PIXELS; q++) 
     {
         for(int l = 0; l < PIXELS; l++) 
         {
             index = q * PIXELS + l;
 
-            if(dotProduct3f(&camera->POV, &manifoldNormals[index]) < 0) {
+            if(dotProduct3f(&camera->POV, &meshNormals[index]) < 0) {
                 continue;
             }
-            
+
             nextL = (l + 1) % PIXELS;
             nextQ = (q + 1) % PIXELS;
 
@@ -215,61 +177,41 @@ void Manifold_draw(Manifold* manifold, vec3f* manifoldNormals, Camera* camera, u
             indexPlusPixels = nextQ * PIXELS + l;
             indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
 
-            grayscaleCoefficient = (dotProduct3f(&manifoldNormals[index], &camera->lightingDirectionVector));
+            grayscaleCoefficient = (dotProduct3f(&meshNormals[index], &camera->lightingDirectionVector));
 
             grayscaleRGB = (unsigned char) (255 - (132 * (1 - grayscaleCoefficient)));
 
             color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
 
-            vertex1.x = manifold->xProj[index];
-            vertex1.y = manifold->yProj[index];
+            vertex1.x = mesh->xProj[index];
+            vertex1.y = mesh->yProj[index];
 
-            vertex2.x = manifold->xProj[indexPlusOne];
-            vertex2.y = manifold->yProj[indexPlusOne];
+            vertex2.x = mesh->xProj[indexPlusOne];
+            vertex2.y = mesh->yProj[indexPlusOne];
 
-            vertexUpper1.x = manifold->xProj[indexPlusPixels];
-            vertexUpper1.y = manifold->yProj[indexPlusPixels];
+            vertexUpper1.x = mesh->xProj[indexPlusPixels];
+            vertexUpper1.y = mesh->yProj[indexPlusPixels];
 
-            vertexUpper2.x = manifold->xProj[indexPlusPixelsPlusOne];
-            vertexUpper2.y = manifold->yProj[indexPlusPixelsPlusOne];   
-             
-/*
-            vertex1.x = manifold->x[index];
-            vertex1.y = manifold->y[index];
+            vertexUpper2.x = mesh->xProj[indexPlusPixelsPlusOne];
+            vertexUpper2.y = mesh->yProj[indexPlusPixelsPlusOne];   
 
-            vertex2.x = manifold->x[indexPlusOne];
-            vertex2.y = manifold->y[indexPlusOne];
-
-            vertexUpper1.x = manifold->x[indexPlusPixels];
-            vertexUpper1.y = manifold->y[indexPlusPixels];
-
-            vertexUpper2.x = manifold->x[indexPlusPixelsPlusOne];
-            vertexUpper2.y = manifold->y[indexPlusPixelsPlusOne]; 
-*/
-
-            // fillRectangle(manifold, frameColors, vertex1, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
-
-            fillTriangle(manifold, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
-            fillTriangle(manifold, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
-
+            fillTriangle(mesh, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
+            fillTriangle(mesh, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
         }
     }
 
     return;
 }  
 
-
-
-void Manifold_rotate(Manifold* manifold, vec3f* manifoldNormals, float rad, char axis) 
+void Mesh_rotate(Mesh* mesh, vec3f* meshNormals, float rad, char axis) 
 {
-
     vec3f previousVector;
 
     float cosRad = (float) cos(rad);
     float sinRad = (float) sin(rad);
 
     int index;
-    
+
     switch(axis) 
     {
         case 'x':
@@ -277,23 +219,19 @@ void Manifold_rotate(Manifold* manifold, vec3f* manifoldNormals, float rad, char
             {
                 for (int k = 0; k < PIXELS; k++) 
                 {
-                    // Rotate manifold VERTICES
                     index = j * PIXELS + k;
 
-                    previousVector.x = manifold->x[index];
-                    previousVector.y = manifold->y[index];
-                    previousVector.z = manifold->z[index];
+                    previousVector.x = mesh->x[index];
+                    previousVector.y = mesh->y[index];
+                    previousVector.z = mesh->z[index];
 
-                    manifold->y[index] = previousVector.y * cosRad - previousVector.z * sinRad;
-                    manifold->z[index] = previousVector.y * sinRad + previousVector.z * cosRad;
+                    mesh->y[index] = previousVector.y * cosRad - previousVector.z * sinRad;
+                    mesh->z[index] = previousVector.y * sinRad + previousVector.z * cosRad;
 
-                    // Rotate normal vectors
+                    previousVector = meshNormals[index];
 
-                    previousVector = manifoldNormals[index];
-
-                    manifoldNormals[index].y = previousVector.y * cosRad - previousVector.z * sinRad;
-                    manifoldNormals[index].z = previousVector.y * sinRad + previousVector.z * cosRad;
-
+                    meshNormals[index].y = previousVector.y * cosRad - previousVector.z * sinRad;
+                    meshNormals[index].z = previousVector.y * sinRad + previousVector.z * cosRad;
                 }
             }
         break;
@@ -303,21 +241,19 @@ void Manifold_rotate(Manifold* manifold, vec3f* manifoldNormals, float rad, char
             {
                 for (int k = 0; k < PIXELS; k++) 
                 {
-                    
                     index = j * PIXELS + k;
 
-                    previousVector.x = manifold->x[index];
-                    previousVector.y = manifold->y[index];
-                    previousVector.z = manifold->z[index];
+                    previousVector.x = mesh->x[index];
+                    previousVector.y = mesh->y[index];
+                    previousVector.z = mesh->z[index];
 
-                    manifold->x[index] = previousVector.x * cosRad + previousVector.z * sinRad;
-                    manifold->z[index] = -previousVector.x * sinRad + previousVector.z * cosRad;
+                    mesh->x[index] = previousVector.x * cosRad + previousVector.z * sinRad;
+                    mesh->z[index] = -previousVector.x * sinRad + previousVector.z * cosRad;
 
+                    previousVector = meshNormals[index];
 
-                    previousVector = manifoldNormals[index];
-
-                    manifoldNormals[index].x = previousVector.x * cosRad + previousVector.z * sinRad;
-                    manifoldNormals[index].z = -previousVector.x * sinRad + previousVector.z * cosRad;
+                    meshNormals[index].x = previousVector.x * cosRad + previousVector.z * sinRad;
+                    meshNormals[index].z = -previousVector.x * sinRad + previousVector.z * cosRad;
                 }
             }
             break;
@@ -327,22 +263,19 @@ void Manifold_rotate(Manifold* manifold, vec3f* manifoldNormals, float rad, char
             {
                 for (int k = 0; k < PIXELS; k++) 
                 {
-
                     index = j * PIXELS + k;
 
-                    previousVector.x = manifold->x[index];
-                    previousVector.y = manifold->y[index];
-                    previousVector.z = manifold->z[index];
+                    previousVector.x = mesh->x[index];
+                    previousVector.y = mesh->y[index];
+                    previousVector.z = mesh->z[index];
 
-                    manifold->x[index] = previousVector.x * cosRad - previousVector.y * sinRad;  
-                    manifold->y[index] = previousVector.x * sinRad + previousVector.y * cosRad;
+                    mesh->x[index] = previousVector.x * cosRad - previousVector.y * sinRad;  
+                    mesh->y[index] = previousVector.x * sinRad + previousVector.y * cosRad;
 
+                    previousVector = meshNormals[index];
 
-                    previousVector = manifoldNormals[index];
-
-                    manifoldNormals[index].x = previousVector.x * cosRad - previousVector.y * sinRad;  
-                    manifoldNormals[index].y = previousVector.x * sinRad + previousVector.y * cosRad; 
-
+                    meshNormals[index].x = previousVector.x * cosRad - previousVector.y * sinRad;  
+                    meshNormals[index].y = previousVector.x * sinRad + previousVector.y * cosRad; 
                 }
             }
             break;
@@ -353,5 +286,6 @@ void Manifold_rotate(Manifold* manifold, vec3f* manifoldNormals, float rad, char
 
     return;
 }
+
 
 #endif

@@ -27,6 +27,7 @@
 
 #define PIXELS 100                                  // loop counter for 3 dimensional shape access    
 #define VERTICES (PIXELS * PIXELS)                  // number of vertices for each object
+#define BOUNDINGBOXCOUNT = VERTICES / 25             
 #define PI M_PI
 #define TWOPI (2 * PI)
 #define TWOPIOVERPIXELS ((TWOPI) / (PIXELS - 1))    // step size for initialization
@@ -80,6 +81,15 @@ typedef struct {
 } vec2i;
 
 typedef struct {
+    float xmin;
+    float ymin;
+    float zmin;
+    float xmax;
+    float ymax;
+    float zmax;
+} BoundingBox;
+
+typedef struct {
     float* x;
     float* y;
     float* z;
@@ -89,7 +99,10 @@ typedef struct {
     int Xposition;
     int Yposition;
     int Zposition;
-} Manifold;
+    BoundingBox boundingBox;
+    BoundingBox* boundingBoxes;
+    vec3i velocity;
+} Mesh;
 
 typedef struct {
     vec3f POV;
@@ -103,6 +116,9 @@ typedef struct {
     float top;
     float bottom;
 } Camera;
+
+
+static vec3i zerovector3i = {0, 0, 0};
 
 
 #endif
