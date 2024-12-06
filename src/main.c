@@ -43,8 +43,11 @@ int main(int argc, char** argv) {
 
     unsigned int* frameColors = NULL;
 
-    vec3f torusNormals[VERTICES];
-    vec3f sphereNormals[VERTICES];
+    // vec3f torusNormals[VERTICES];
+    // vec3f sphereNormals[VERTICES];
+
+    vec3f* torusNormals;
+    vec3f* sphereNormals;
 
 
 

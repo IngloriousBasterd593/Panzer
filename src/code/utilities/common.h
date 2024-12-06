@@ -27,7 +27,8 @@
 
 #define PIXELS 100                                  // loop counter for 3 dimensional shape access    
 #define VERTICES (PIXELS * PIXELS)                  // number of vertices for each object
-#define BOUNDINGBOXCOUNT = VERTICES / 25             
+#define BOUNDINGBOXSTEP 25             
+#define BOUNDINGBOXCOUNT (VERTICES / BOUNDINGBOXSTEP)             
 #define PI M_PI
 #define TWOPI (2 * PI)
 #define TWOPIOVERPIXELS ((TWOPI) / (PIXELS - 1))    // step size for initialization
@@ -102,6 +103,7 @@ typedef struct {
     BoundingBox boundingBox;
     BoundingBox* boundingBoxes;
     vec3i velocity;
+    vec3f* meshNormals;
 } Mesh;
 
 typedef struct {

@@ -121,6 +121,13 @@ int get_space(Mesh* mesh)
         return 1;
     }
 
+    mesh->boundingBoxes = (BoundingBox*) malloc(sizeof(BoundingBox) * BOUNDINGBOXCOUNT);
+    if(mesh->boundingBoxes == NULL)
+    {
+        fprintf("Failed to initialize heap\n");
+        return;
+    }
+
     return 0;
 }
 

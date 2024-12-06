@@ -203,6 +203,95 @@ void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* fra
     return;
 }  
 
+void MeshES_draw(Mesh** mesh, vec3f* meshNormals, Camera* camera, unsigned int* frameColors, int drawPrecision) 
+{
+    if(drawPrecision < 1) 
+    {
+        fprintf(stderr, "write a correct drawprecision, bozo\n");
+        return;
+    }
+
+    int index;
+    int indexPlusPixelsPlusOne;
+    int indexPlusPixels;
+    int indexPlusOne;
+    int nextL;
+    int nextQ;
+
+    int grayscaleRGB;
+    float grayscaleCoefficient;
+    unsigned int color;
+
+    vec2f vertex1;
+    vec2f vertex2;
+    vec2f vertexUpper1;
+    vec2f vertexUpper2;
+    mat4f orthoMatrix;
+    mat4f perspectiveMatrix;
+    mat4f matrix;
+
+    perspectiveProjectionMatrix(&perspectiveMatrix, camera);
+
+    for(int q = 0; q < PIXELS; q++) 
+    {
+        for(int l = 0; l < PIXELS; l++) 
+        {
+            index = q * PIXELS + l;
+
+            vec4f vertex = { mesh->x[index] + mesh->Xposition, mesh->y[index] + mesh->Yposition, mesh->z[index] + mesh->Zposition, 1.0f };
+
+            multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
+            vec3f projVertex = perspectiveNdcToScreen(mesh, &vertex);
+
+            mesh->xProj[index] = projVertex.x;
+            mesh->yProj[index] = projVertex.y;
+            mesh->zProj[index] = projVertex.z;
+        }
+    }
+
+    for(int q = 0; q < PIXELS; q++) 
+    {
+        for(int l = 0; l < PIXELS; l++) 
+        {
+            index = q * PIXELS + l;
+
+            if(dotProduct3f(&camera->POV, &meshNormals[index]) < 0) {
+                continue;
+            }
+
+            nextL = (l + 1) % PIXELS;
+            nextQ = (q + 1) % PIXELS;
+
+            indexPlusOne = q * PIXELS + nextL;
+            indexPlusPixels = nextQ * PIXELS + l;
+            indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
+
+            grayscaleCoefficient = (dotProduct3f(&meshNormals[index], &camera->lightingDirectionVector));
+
+            grayscaleRGB = (unsigned char) (255 - (132 * (1 - grayscaleCoefficient)));
+
+            color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
+
+            vertex1.x = mesh->xProj[index];
+            vertex1.y = mesh->yProj[index];
+
+            vertex2.x = mesh->xProj[indexPlusOne];
+            vertex2.y = mesh->yProj[indexPlusOne];
+
+            vertexUpper1.x = mesh->xProj[indexPlusPixels];
+            vertexUpper1.y = mesh->yProj[indexPlusPixels];
+
+            vertexUpper2.x = mesh->xProj[indexPlusPixelsPlusOne];
+            vertexUpper2.y = mesh->yProj[indexPlusPixelsPlusOne];   
+
+            fillTriangle(mesh, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
+            fillTriangle(mesh, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
+        }
+    }
+
+    return;
+}  
+
 void Mesh_rotate(Mesh* mesh, vec3f* meshNormals, float rad, char axis) 
 {
     vec3f previousVector;

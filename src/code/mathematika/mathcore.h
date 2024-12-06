@@ -48,6 +48,34 @@ float maxOfArray(float* array)
     return maxValue;
 }
 
+float maxOfTwoF(float num1, float num2)
+{
+    if(num1 > num2)
+    {
+        return num1;
+    } else if(num1 < num2)
+    {
+        return num2;
+    } else
+    {
+        return num1;
+    }
+}
+
+float minOfTwoF(float num1, float num2)
+{
+    if(num1 > num2)
+    {
+        return num2;
+    } else if(num1 < num2)
+    {
+        return num1;
+    } else
+    {
+        return num1;
+    }
+}
+
 void generateBoundingBox(Mesh* mesh)
 {
     mesh->boundingBox.xmax = mesh->x[0] + mesh->Xposition;
@@ -87,12 +115,27 @@ void generateBoundingBox(Mesh* mesh)
         }
     }
 
+    int index;
+    int indexPlusPixelsPlusOne;
+    int nextJ;
+    int nextI;
 
-    mesh->boundingBoxes = malloc(sizeof(BoundingBox) * BOUNDINGBOXCOUNT);
-    if(mesh->boundingBoxes == NULL)
+    for(int i = 0; i < BOUNDINGBOXCOUNT; i += BOUNDINGBOXSTEP)
     {
-        fprintf("Failed to initialize heap");
-        return;
+        for(int j = 0; j < BOUNDINGBOXCOUNT; j += BOUNDINGBOXSTEP)
+        {
+            index = i * PIXELS + j;
+            nextJ = (j + BOUNDINGBOXSTEP) % PIXELS;
+            nextI = (i + BOUNDINGBOXSTEP) % PIXELS;
+            indexPlusPixelsPlusOne = nextI * PIXELS + nextJ;
+
+            mesh->boundingBoxes[index].xmax = maxOfTwoF(mesh->x[index], mesh->x[indexPlusPixelsPlusOne]);
+            mesh->boundingBoxes[index].xmin = minOfTwoF(mesh->x[index], mesh->x[indexPlusPixelsPlusOne]);   
+            mesh->boundingBoxes[index].ymax = maxOfTwoF(mesh->y[index], mesh->y[indexPlusPixelsPlusOne]);
+            mesh->boundingBoxes[index].ymin = minOfTwoF(mesh->y[index], mesh->y[indexPlusPixelsPlusOne]);   
+            mesh->boundingBoxes[index].zmax = maxOfTwoF(mesh->z[index], mesh->z[indexPlusPixelsPlusOne]);
+            mesh->boundingBoxes[index].zmin = minOfTwoF(mesh->z[index], mesh->z[indexPlusPixelsPlusOne]);
+        }
     }
 
     return;
