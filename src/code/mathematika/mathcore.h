@@ -35,17 +35,30 @@ float dotProduct2f(vec2f* v1, vec2f* v2)
     return v1->x * v2->x + v1->y * v2->y;
 }
 
-float maxOfArray(float* array) 
+float maxOfArrayF(float* array) 
 {
     float maxValue = array[0];
-    for (int i = 1; i < VERTICES; i++) 
+    for(int i = 1; i < VERTICES; i++) 
     {
-        if (array[i] > maxValue) 
+        if(array[i] > maxValue) 
         {
             maxValue = array[i];
         }
     }
     return maxValue;
+}
+
+float minOfArrayF(float* array) 
+{
+    float minValue = array[0];
+    for(int i = 1; i < VERTICES; i++) 
+    {
+        if(array[i] < minValue) 
+        {
+            minValue = array[i];
+        }
+    }
+    return minValue;
 }
 
 float maxOfTwoF(float num1, float num2)
@@ -78,42 +91,12 @@ float minOfTwoF(float num1, float num2)
 
 void generateBoundingBox(Mesh* mesh)
 {
-    mesh->boundingBox.xmax = mesh->x[0] + mesh->Xposition;
-    mesh->boundingBox.ymax = mesh->y[0] + mesh->Yposition;
-    mesh->boundingBox.zmax = mesh->z[0] + mesh->Zposition;
-    mesh->boundingBox.xmin = mesh->x[0] + mesh->Xposition;
-    mesh->boundingBox.ymin = mesh->y[0] + mesh->Yposition;
-    mesh->boundingBox.zmin = mesh->z[0] + mesh->Zposition;
-
-    for(int i = 1; i < VERTICES; i++)
-    {
-        if(mesh->boundingBox.xmax < mesh->x[i] + mesh->Xposition)
-        {
-            mesh->boundingBox.xmax = mesh->x[i] + mesh->Xposition;
-        }
-        if(mesh->boundingBox.xmin > mesh->x[i] + mesh->Xposition)
-        {
-            mesh->boundingBox.xmin = mesh->x[i] + mesh->Xposition;
-        }
-
-        if(mesh->boundingBox.ymax < mesh->y[i] + mesh->Yposition)
-        {
-            mesh->boundingBox.ymax = mesh->y[i] + mesh->Yposition;
-        }
-        if(mesh->boundingBox.ymin > mesh->y[i] + mesh->Yposition)
-        {
-            mesh->boundingBox.ymin = mesh->y[i] + mesh->Yposition;
-        }
-
-        if(mesh->boundingBox.zmax < mesh->z[i] + mesh->Zposition)
-        {
-            mesh->boundingBox.zmax = mesh->z[i] + mesh->Zposition;
-        }
-        if(mesh->boundingBox.zmin > mesh->z[i] + mesh->Zposition)
-        {
-            mesh->boundingBox.zmin = mesh->z[i] + mesh->Zposition;
-        }
-    }
+    mesh->boundingBox.xmax = maxOfArrayF(mesh->x);
+    mesh->boundingBox.ymax = minOfArrayF(mesh->x);
+    mesh->boundingBox.zmax = maxOfArrayF(mesh->y);
+    mesh->boundingBox.xmin = minOfArrayF(mesh->y);
+    mesh->boundingBox.ymin = maxOfArrayF(mesh->z);
+    mesh->boundingBox.zmin = minOfArrayF(mesh->z);
 
     int index;
     int indexPlusPixelsPlusOne;
@@ -202,8 +185,8 @@ void multiplyMatrixByMatrix(mat4f* m1, mat4f* m2, mat4f* resultMatrix)
 vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
 {
     return (vec3f) { 
-        (((vertex->x / vertex->w) + 1.0f) * HALFWINWIDTH) + mesh->Xposition,
-        ((1.0f - (vertex->y / vertex->w)) * HALFWINHEIGHT) + mesh->Yposition,
+        (((vertex->x / vertex->w) + 1.0f) * HALFWINWIDTH) + mesh->pos.x,
+        ((1.0f - (vertex->y / vertex->w)) * HALFWINHEIGHT) + mesh->pos.y,
         vertex->z / vertex->w
     };
 }
@@ -215,13 +198,12 @@ void sphere_init(Mesh* mesh, vec3f* meshNormals, int radius, int offsetX, int of
         fprintf(stderr, "write a correct radius, bozo\n");
         return;
     }
-
-    mesh->Xposition = offsetX;
-    mesh->Yposition = offsetY;
-    mesh->Zposition = offsetZ;
+    mesh->radius = radius;
+    mesh->pos.x = offsetX;
+    mesh->pos.y = offsetY;
+    mesh->pos.z = offsetZ;
     
     int index, nextL, nextQ;
-
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
     
     for(int j = 0; j < PIXELS; j++) 
@@ -272,9 +254,9 @@ void torus_init(Mesh* mesh, vec3f* meshNormals, int innerRadius, int outerRadius
         return;
     }
 
-    mesh->Xposition = offsetX;
-    mesh->Yposition = offsetY;
-    mesh->Zposition = offsetZ;
+    mesh->pos.x = offsetX;
+    mesh->pos.y = offsetY;
+    mesh->pos.z = offsetZ;
 
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
 
@@ -286,9 +268,9 @@ void torus_init(Mesh* mesh, vec3f* meshNormals, int innerRadius, int outerRadius
         {
             index = j * PIXELS + k; 
 
-            mesh->x[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j) + offsetX;
-            mesh->y[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j) + offsetY;
-            mesh->z[index] = innerRadius * sin(TWOPIOVERPIXELS * k) + offsetZ;
+            mesh->x[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j);
+            mesh->y[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j);
+            mesh->z[index] = innerRadius * sin(TWOPIOVERPIXELS * k);
         }
     }
 

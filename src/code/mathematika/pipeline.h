@@ -94,7 +94,7 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
     return;
 }
 
-int checkForBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
+int checkMeshBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
 {
     if(mesh1->boundingBox.xmax < mesh2->boundingBox.xmin || mesh1->boundingBox.xmin > mesh2->boundingBox.xmax) 
     {
@@ -112,6 +112,39 @@ int checkForBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
     }
 
     return true;
+}
+
+inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2)
+{
+   
+
+
+
+    return true;
+}
+
+int checkIfMeshInRegion(Mesh* mesh, BoundingBox* region)
+{
+    if(mesh->pos.x > region.xmin && mesh->pos.x < region.xmax && mesh->pos.y > region.ymin && mesh->pos.y < region.ymax && mesh->pos.z > region.zmin && mesh->pos.z < region.zmax)
+    {
+        return true;
+    } 
+
+    return true;
+}
+
+int checkForMeshCollision(Mesh** meshes, int numberOfMeshes)
+{
+
+
+
+
+
+
+
+
+
+    return EXIT_SUCCESS;
 }
 
 void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* frameColors, int drawPrecision) 
@@ -141,6 +174,8 @@ void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* fra
     mat4f perspectiveMatrix;
     mat4f matrix;
 
+       
+/*
     perspectiveProjectionMatrix(&perspectiveMatrix, camera);
 
     for(int q = 0; q < PIXELS; q++) 
@@ -158,7 +193,12 @@ void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* fra
             mesh->yProj[index] = projVertex.y;
             mesh->zProj[index] = projVertex.z;
         }
-    }
+    } */
+
+
+    mesh->pos.x += mesh->velocity.x;
+    mesh->pos.y += mesh->velocity.x;
+    mesh->pos.z += mesh->velocity.x;
 
     for(int q = 0; q < PIXELS; q++) 
     {
@@ -183,6 +223,7 @@ void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* fra
 
             color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
 
+/*
             vertex1.x = mesh->xProj[index];
             vertex1.y = mesh->yProj[index];
 
@@ -193,96 +234,20 @@ void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* fra
             vertexUpper1.y = mesh->yProj[indexPlusPixels];
 
             vertexUpper2.x = mesh->xProj[indexPlusPixelsPlusOne];
-            vertexUpper2.y = mesh->yProj[indexPlusPixelsPlusOne];   
+            vertexUpper2.y = mesh->yProj[indexPlusPixelsPlusOne];   */
 
-            fillTriangle(mesh, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
-            fillTriangle(mesh, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
-        }
-    }
 
-    return;
-}  
-
-void MeshES_draw(Mesh** mesh, vec3f* meshNormals, Camera* camera, unsigned int* frameColors, int drawPrecision) 
-{
-    if(drawPrecision < 1) 
-    {
-        fprintf(stderr, "write a correct drawprecision, bozo\n");
-        return;
-    }
-
-    int index;
-    int indexPlusPixelsPlusOne;
-    int indexPlusPixels;
-    int indexPlusOne;
-    int nextL;
-    int nextQ;
-
-    int grayscaleRGB;
-    float grayscaleCoefficient;
-    unsigned int color;
-
-    vec2f vertex1;
-    vec2f vertex2;
-    vec2f vertexUpper1;
-    vec2f vertexUpper2;
-    mat4f orthoMatrix;
-    mat4f perspectiveMatrix;
-    mat4f matrix;
-
-    perspectiveProjectionMatrix(&perspectiveMatrix, camera);
-
-    for(int q = 0; q < PIXELS; q++) 
-    {
-        for(int l = 0; l < PIXELS; l++) 
-        {
-            index = q * PIXELS + l;
-
-            vec4f vertex = { mesh->x[index] + mesh->Xposition, mesh->y[index] + mesh->Yposition, mesh->z[index] + mesh->Zposition, 1.0f };
-
-            multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
-            vec3f projVertex = perspectiveNdcToScreen(mesh, &vertex);
-
-            mesh->xProj[index] = projVertex.x;
-            mesh->yProj[index] = projVertex.y;
-            mesh->zProj[index] = projVertex.z;
-        }
-    }
-
-    for(int q = 0; q < PIXELS; q++) 
-    {
-        for(int l = 0; l < PIXELS; l++) 
-        {
-            index = q * PIXELS + l;
-
-            if(dotProduct3f(&camera->POV, &meshNormals[index]) < 0) {
-                continue;
-            }
-
-            nextL = (l + 1) % PIXELS;
-            nextQ = (q + 1) % PIXELS;
-
-            indexPlusOne = q * PIXELS + nextL;
-            indexPlusPixels = nextQ * PIXELS + l;
-            indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
-
-            grayscaleCoefficient = (dotProduct3f(&meshNormals[index], &camera->lightingDirectionVector));
-
-            grayscaleRGB = (unsigned char) (255 - (132 * (1 - grayscaleCoefficient)));
-
-            color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
-
-            vertex1.x = mesh->xProj[index];
+            vertex1.x = mesh->x[index];
             vertex1.y = mesh->yProj[index];
 
-            vertex2.x = mesh->xProj[indexPlusOne];
-            vertex2.y = mesh->yProj[indexPlusOne];
+            vertex2.x = mesh->x[indexPlusOne];
+            vertex2.y = mesh->y[indexPlusOne];
 
-            vertexUpper1.x = mesh->xProj[indexPlusPixels];
-            vertexUpper1.y = mesh->yProj[indexPlusPixels];
+            vertexUpper1.x = mesh->x[indexPlusPixels];
+            vertexUpper1.y = mesh->y[indexPlusPixels];
 
-            vertexUpper2.x = mesh->xProj[indexPlusPixelsPlusOne];
-            vertexUpper2.y = mesh->yProj[indexPlusPixelsPlusOne];   
+            vertexUpper2.x = mesh->x[indexPlusPixelsPlusOne];
+            vertexUpper2.y = mesh->y[indexPlusPixelsPlusOne];  
 
             fillTriangle(mesh, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
             fillTriangle(mesh, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
@@ -291,6 +256,7 @@ void MeshES_draw(Mesh** mesh, vec3f* meshNormals, Camera* camera, unsigned int* 
 
     return;
 }  
+
 
 void Mesh_rotate(Mesh* mesh, vec3f* meshNormals, float rad, char axis) 
 {

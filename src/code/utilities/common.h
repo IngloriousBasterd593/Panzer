@@ -97,9 +97,10 @@ typedef struct {
     float* xProj;
     float* yProj;
     float* zProj;
-    int Xposition;
-    int Yposition;
-    int Zposition;
+    int radius;
+    vec3i pos;
+    vec3f meshMax;
+    vec3f meshMin;
     BoundingBox boundingBox;
     BoundingBox* boundingBoxes;
     vec3i velocity;
@@ -120,7 +121,8 @@ typedef struct {
 } Camera;
 
 
-static vec3i zerovector3i = {0, 0, 0};
+const static vec3i zerovector3i = {0, 0, 0};
+const static BoundingBox simulationSpace = {-2000, -2000, -1000, 2000, 2000, 1000};
 
 
 #endif
