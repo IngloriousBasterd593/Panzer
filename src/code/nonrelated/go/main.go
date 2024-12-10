@@ -2,21 +2,32 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
 
+func display(str string) {
+	for i := 0; i < 3; i++ {
+		fmt.Println(str)
+	}
+}
+
 func main() {
-	arr := []int{1, 2, 3, 4, 5} 
-	fmt.Println("Array elements:", arr)
+	var wg sync.WaitGroup
 
-	var str string = "ILOVETOEAT"
-	fmt.Println(str)
+	wg.Add(1)
+	niga := func() {
+		display("Hello, niga!")
+		wg.Done()
+	}
+	go niga()
 
-	byteArray := []byte{'H', 'e', 'l', 'l', 'o'}
-	str1 := string(byteArray)
+	wg.Add(1)
+	go func() {
+		display("Goodbye, nige!")
+		wg.Done()
+	}()
 
+	wg.Wait()
 
-
-
-
-
+	display("Hello, Main!")
 }
