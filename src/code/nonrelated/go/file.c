@@ -2,43 +2,18 @@
 
 int main()
 {
-    Input** inputs = initUserInputBuffers(10);
+    int t;
+    scanf("%d", &t);   
 
-    getUserInput(inputs[0]);
-
-
-    printf("%d\n", kempelaUzdevums(inputs[0]->parsedToInt, inputs[0]->len));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    for(int i = 0; i < 10; i++)
+    while(t--)
     {
-        freeInputObject(inputs[i]);
-    }
+        int n;
+        scanf("%d", &n);
+        char str[n + 2];
+        fgets(str, n + 2, stdin);
+        str[n + 1] = '\0';
 
-    free(inputs);
-   
+
+    }
     return EXIT_SUCCESS;
 }

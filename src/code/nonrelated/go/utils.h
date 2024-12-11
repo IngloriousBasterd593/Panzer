@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define MAXBUFFLEN 512
 #define MAXNUMCOUNT 256
@@ -316,46 +317,5 @@ void freeInputObject(Input* input)
     free(input);
 }
 
-
-int kempelaUzdevums(int* arr, int len)
-{
-    bubbleSort(arr, len);
-
-    int bultuskaits = 0;
-    int firstTime = true;
-    int nextIsDifferent = true;
-
-    for(int i = 0; i < len; i++)
-    {
-        if(i + 1 >= len)
-        {
-            break;
-        } else if(arr[i] == arr[i + 1] - 1)
-        {
-            if(firstTime)
-            {
-                bultuskaits++;
-            }
-
-            firstTime = false;
-            nextIsDifferent = false;
-        } else if(arr[i + 1] == arr[i])
-        {
-            bultuskaits++;
-            nextIsDifferent = false;
-        } else if(arr[i + 1] + 1 > arr[i])
-        {
-            if(nextIsDifferent)
-            {
-                bultuskaits++;
-            }
-
-            nextIsDifferent = true;
-            firstTime = true;
-        }
-    }
-
-    return bultuskaits;
-}
 
 #endif
