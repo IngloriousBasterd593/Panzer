@@ -318,4 +318,53 @@ void freeInputObject(Input* input)
 }
 
 
+int isPrime(int n)
+{
+    if(n <= 2)
+    {
+        return true;
+    }
+
+    for(int i = 2; i < n; i++)
+    {
+        if(n % i == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+int stalinSort(int* arr, int* res, int len)
+{
+    int j = 0;
+    for(int i = 0; i < len - 1; i++)
+    {
+    
+        if(arr[i] < arr[i + 1])
+        {
+            res[j] = arr[i];
+            j++;
+            if(i >= len - 1)
+            {
+                printf("sniga");
+                res[j] = arr[i + 1];
+                break;
+            }
+        } else if(arr[i] > arr[i + 1]) 
+        { 
+            continue;
+        } else 
+        {
+            res[j] = arr[i];
+            j++;
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+
+
 #endif
