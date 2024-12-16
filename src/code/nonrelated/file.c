@@ -2,7 +2,7 @@
 
 int main()
 {
-    setvbuf(stdout, NULL, _IOFBF, 1073741824);
+    // setvbuf(stdout, NULL, _IOFBF, 1073741824);
 
     // 4294967296
     // 65536
@@ -12,6 +12,8 @@ int main()
     // 67108864
     // 268435456
     // 1073741824
+
+/*
 
     int n;
     scanf("%d", &n);
@@ -39,6 +41,11 @@ int main()
 
    
     fflush(stdout);
+    */
+
+
+   Node* list = NULL;
+
 
     return 0;
 }

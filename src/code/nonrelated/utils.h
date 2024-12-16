@@ -20,6 +20,25 @@ typedef struct {
     int len;
 } Input;
 
+
+typedef struct {
+    void* data;
+    Node* next;
+} Node;
+
+
+static enum Datatypes {
+    int,
+    long, 
+    float,
+    double,
+    char,
+    char*,
+    char**,
+    int*,
+    float*
+}
+
 int bubbleSort(int* arr, int len)
 {
     if(arr == NULL)
@@ -194,7 +213,6 @@ int greedyMaxSubarraySum(int* arr, int len)
     memset(sums, 0, sizeof(int) * MAXNUMCOUNT);
     memset(currArr, 0, sizeof(int) * len);
 
-    //printf("log: %d\n", sums[]);
     for(int i = 0; i < len; i++)
     {
         for(int j = 0; j < len; j++)
@@ -366,5 +384,46 @@ int stalinSort(int* arr, int* res, int len)
     return EXIT_SUCCESS;
 }
 
+
+int initLinkedList(Node* list, int len)
+{
+    list = (Node*) malloc(len * sizeof(Node));
+    if(list == NULL)
+    {
+        return EXIT_FAILURE;
+    }
+
+    for(int i = 0; i < len - 1; i++)
+    {
+        list[i].next = &list[i + 1];
+    }
+
+    list[len - 1].next = NULL;
+
+    return EXIT_SUCCESS;
+}
+
+
+int addNewNode(Node* list, int len)
+{
+
+
+    return EXIT_SUCCESS;
+}
+
+
+int deleteNode(Node* list, int len)
+{
+
+
+    return EXIT_SUCCESS;
+}
+
+int appendToNode(Node list, )
+{
+
+
+    return EXIT_SUCCESS;
+}
 
 #endif
