@@ -2,32 +2,38 @@ package main
 
 import (
 	"fmt"
-	"sync"
+	"strings"
 )
 
-func display(str string) {
-	for i := 0; i < 3; i++ {
-		fmt.Println(str)
-	}
-}
-
 func main() {
-	var wg sync.WaitGroup
+	var t int
+	fmt.Scan(&t)
 
-	wg.Add(1)
-	niga := func() {
-		display("Hello, niga!")
-		wg.Done()
+	for i := 0; i < t; i++ {
+		var str string
+		fmt.Scan(&str)
+
+		new := strings.Repeat(" ", len(str))
+		index := 0
+
+		for i := len(str); i > 0; i-- {
+			switch(str[i]) {
+			case: 'w'
+			break;
+
+			case: 'q'
+				new[index++] = 'p'
+			break;
+
+			case: 'p'
+				new[index++] = 'q'
+			break;
+
+			default:
+				break;
+			}
+		}
+
+		fmt.Println(new)
 	}
-	go niga()
-
-	wg.Add(1)
-	go func() {
-		display("Goodbye, nige!")
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	display("Hello, Main!")
 }

@@ -419,11 +419,57 @@ int deleteNode(Node* list, int len)
     return EXIT_SUCCESS;
 }
 
-int appendToNode(Node list, )
+int appendToNode(Node* list, void* data, enum Datatypes type)
 {
+    switch(type) 
+    {
+        case: int*
+
+        break;
+
+        case: long*
+
+        break;
+
+        case: float*
+
+        break;
+
+        case: double*
+
+        break;
+
+        case: char*
+
+        break;
+
+        case: char**,
+
+        break;
+
+        case: int**
+
+        break;
+
+        default: 
+        break;
+    }
 
 
     return EXIT_SUCCESS;
 }
+
+static enum Datatypes {
+    int,
+    long, 
+    float,
+    double,
+    char,
+    char*,
+    char**,
+    int*,
+    float*
+}
+
 
 #endif
