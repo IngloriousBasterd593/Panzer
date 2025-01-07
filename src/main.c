@@ -66,12 +66,17 @@ int main(int argc, char** argv) {
         goto free;
     }
 
+    torusNormals = malloc(VERTICES * sizeof(vec3f));
+    sphereNormals = malloc(VERTICES * sizeof(vec3f));
+    if(torusNormals == NULL || sphereNormals == NULL) {
+        fprintf(stderr, "couldn't get space for normals");
+        goto free;
+    }
 
-
-    // torus_init(&torus, torusNormals, 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
+    torus_init(&torus, torusNormals, 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
     sphere_init(&sphere, sphereNormals, 30, HALFWINWIDTH, HALFWINHEIGHT, 600);
 
-    // Mesh_draw(&torus, torusNormals, &camera, frameColors, 0, 0, 20);
+    Mesh_draw(&torus, torusNormals, &camera, frameColors, 0, 0, 20);
     Mesh_draw(&sphere, sphereNormals, &camera, frameColors, 20);
 
     SDL_RenderPresent(renderer);
@@ -121,16 +126,16 @@ int main(int argc, char** argv) {
         SDL_RenderClear(renderer);
 
         Mesh_draw(&sphere, sphereNormals, &camera, frameColors, drawPrecision);
-        // Mesh_draw(&torus, torusNormals, frameColors, 200, 130 * sin(Rad), drawPrecision);
+        Mesh_draw(&torus, torusNormals, frameColors, 200, 130 * sin(Rad), drawPrecision);
 
         SDL_UpdateTexture(texture, NULL, frameColors, SCREENWIDTH * sizeof(unsigned int));
         SDL_RenderCopy(renderer, texture, NULL, NULL);
 
         SDL_RenderPresent(renderer);
 
-        // Mesh_rotate(&torus, torusNormals, deltaRad, 'x');
-        // Mesh_rotate(&torus, torusNormals, deltaRad, 'y');
-        // Mesh_rotate(&torus, torusNormals, deltaRad, 'z');
+        Mesh_rotate(&torus, torusNormals, deltaRad, 'x');
+        Mesh_rotate(&torus, torusNormals, deltaRad, 'y');
+        Mesh_rotate(&torus, torusNormals, deltaRad, 'z');
 
         Mesh_rotate(&sphere, sphereNormals, deltaRad, 'x');
         Mesh_rotate(&sphere, sphereNormals, deltaRad, 'y');
@@ -146,7 +151,24 @@ int main(int argc, char** argv) {
             usleep(1000 * (16 - cpu_time_used));
         }
 
-        printf("%4.0f milliseconds per frame\n", cpu_time_used);  
+        printf("%4.0f milliseconds per frame\n", cpu_time_used);
+
+
+
+        /*pipiline:
+        1. clear frame
+        2. draw 
+        3. present frame
+        4. rotate 
+        5. rotate 
+        6. check for collisions
+            
+
+
+
+
+
+        */  
     }
 
     free:
@@ -166,6 +188,9 @@ int main(int argc, char** argv) {
     free(sphere.xProj);
     free(sphere.yProj);
     free(sphere.zProj);
+
+    free(torusNormals);
+    free(sphereNormals);
 
     free(frameColors);
     free(shaderProgram);

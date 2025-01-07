@@ -94,6 +94,8 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
     return;
 }
 
+
+// check for mesh bounding box colission
 int checkMeshBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
 {
     if(mesh1->boundingBox.xmax < mesh2->boundingBox.xmin || mesh1->boundingBox.xmin > mesh2->boundingBox.xmax) 
@@ -114,15 +116,18 @@ int checkMeshBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
     return true;
 }
 
-inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2)
-{
-   
-
-
-
+// check for individual bounding box colission
+inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2) {
+    // Check overlap on all axes
+    if (b1->xmin > b2->xmax || b1->xmax < b2->xmin) return false;
+    if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) return false;
+    if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) return false;
+    
+    // If we get here, boxes overlap on all axes
     return true;
 }
 
+// check if mesh is in region
 int checkIfMeshInRegion(Mesh* mesh, BoundingBox* region)
 {
     if(mesh->pos.x > region.xmin && mesh->pos.x < region.xmax && mesh->pos.y > region.ymin && mesh->pos.y < region.ymax && mesh->pos.z > region.zmin && mesh->pos.z < region.zmax)
@@ -133,17 +138,27 @@ int checkIfMeshInRegion(Mesh* mesh, BoundingBox* region)
     return true;
 }
 
-int checkForMeshCollision(Mesh** meshes, int numberOfMeshes)
+int checkForMeshCollisionAndUpdateMeshParameters(Mesh** meshes, int numberOfMeshes) 
 {
+    for(int i = 0; i < numberOfMeshes; i++) {
+        for(int j = i + 1; j < numberOfMeshes; j++) {
+           
+            if(checkMeshBoundingBoxCollision(meshes[i], meshes[j])) {
+                for(int bi = 0; bi < BOUNDINGBOXCOUNT; bi++) {
+                    for(int bj = 0; bj < BOUNDINGBOXCOUNT; bj++) {
+                        if(checkBoundingBoxCollision(&meshes[i]->boundingBoxes[bi], &meshes[j]->boundingBoxes[bj])) {
+                            
+                            // Collision detected - update parameters
 
-
-
-
-
-
-
-
-
+                            printf("Collision detected");
+                            
+                            return EXIT_SUCCESS;
+                        }
+                    }
+                }
+            }
+        }
+    }
     return EXIT_SUCCESS;
 }
 
