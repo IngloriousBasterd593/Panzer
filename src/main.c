@@ -27,14 +27,29 @@ int main(int argc, char** argv) {
 
     start = clock();
 
+    int meshCount = 1;
 
+    Mesh** meshes = malloc(meshCount * sizeof(Mesh*));
+    if(meshes == NULL) 
+    {
+        fprintf(stderr, "couldn't get space for meshes");
+        goto SDLquit;
+    }
 
+    for(int i = 0; i < meshCount; i++) 
+    {
+        meshes[i] = malloc(sizeof(Mesh));
+        if(meshes[i] == NULL) 
+        {
+            fprintf(stderr, "couldn't get space for mesh");
+            goto free;
+        }
 
-
-
-
-    Mesh torus;
-    Mesh sphere;
+        if(get_space(meshes[i]) == 1) 
+        {
+            goto free;
+        }
+    }
 
     vec3f lightPerspectiveVector = {0, 0, 1};
     vec3f viewVector = {0, 0, 1};
@@ -43,42 +58,16 @@ int main(int argc, char** argv) {
 
     unsigned int* frameColors = NULL;
 
-    // vec3f torusNormals[VERTICES];
-    // vec3f sphereNormals[VERTICES];
-
-    vec3f* torusNormals;
-    vec3f* sphereNormals;
-
-
-
-
-    if(get_space(&torus) == 1) {
-        goto SDLquit;
-    }
-
-    if(get_space(&sphere) == 1) {
-        goto SDLquit;
-    }
-
     frameColors = malloc(SCREENSIZE * sizeof(unsigned int));
     if(frameColors == NULL) {
         perror("bruh");
         goto free;
     }
 
-    torusNormals = malloc(VERTICES * sizeof(vec3f));
-    sphereNormals = malloc(VERTICES * sizeof(vec3f));
-    if(torusNormals == NULL || sphereNormals == NULL) {
-        fprintf(stderr, "couldn't get space for normals");
-        goto free;
-    }
+    torus_init(meshes[0], 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
 
-    torus_init(&torus, torusNormals, 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
-    sphere_init(&sphere, sphereNormals, 30, HALFWINWIDTH, HALFWINHEIGHT, 600);
-
-    Mesh_draw(&torus, torusNormals, &camera, frameColors, 0, 0, 20);
-    Mesh_draw(&sphere, sphereNormals, &camera, frameColors, 20);
-
+    Mesh_draw(meshes[0], &camera, frameColors, 0, 0, 20);
+    
     SDL_RenderPresent(renderer);
 
     end = clock();
@@ -125,21 +114,22 @@ int main(int argc, char** argv) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
 
-        Mesh_draw(&sphere, sphereNormals, &camera, frameColors, drawPrecision);
-        Mesh_draw(&torus, torusNormals, frameColors, 200, 130 * sin(Rad), drawPrecision);
+        
 
         SDL_UpdateTexture(texture, NULL, frameColors, SCREENWIDTH * sizeof(unsigned int));
         SDL_RenderCopy(renderer, texture, NULL, NULL);
 
         SDL_RenderPresent(renderer);
 
-        Mesh_rotate(&torus, torusNormals, deltaRad, 'x');
-        Mesh_rotate(&torus, torusNormals, deltaRad, 'y');
-        Mesh_rotate(&torus, torusNormals, deltaRad, 'z');
 
-        Mesh_rotate(&sphere, sphereNormals, deltaRad, 'x');
-        Mesh_rotate(&sphere, sphereNormals, deltaRad, 'y');
-        Mesh_rotate(&sphere, sphereNormals, deltaRad, 'z');
+       
+            Mesh_draw(meshes, &camera, frameColors, drawPrecision);
+
+            Mesh_rotate(meshes, deltaRad, 'x');
+            Mesh_rotate(meshes, deltaRad, 'y');
+            Mesh_rotate(meshes, deltaRad, 'z');
+        
+  
 
         theta += 3 * deltaRad;
         Rad += deltaRad;
@@ -155,7 +145,8 @@ int main(int argc, char** argv) {
 
 
 
-        /*pipiline:
+        /*
+        pipiline:
         1. clear frame
         2. draw 
         3. present frame
@@ -173,24 +164,7 @@ int main(int argc, char** argv) {
 
     free:
 
-    free(torus.x);
-    free(torus.y);
-    free(torus.z);
-
-    free(sphere.x);
-    free(sphere.y);
-    free(sphere.z);
-
-    free(torus.xProj);
-    free(torus.yProj);
-    free(torus.zProj);
-
-    free(sphere.xProj);
-    free(sphere.yProj);
-    free(sphere.zProj);
-
-    free(torusNormals);
-    free(sphereNormals);
+    free_space(meshes, 1);
 
     free(frameColors);
     free(shaderProgram);

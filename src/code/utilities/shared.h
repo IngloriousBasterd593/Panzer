@@ -62,7 +62,7 @@ int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture
     return 0;
 }
 
-int get_space(Mesh* mesh) 
+int get_space(Mesh* meshes) 
 {
     mesh->x = malloc(VERTICES * sizeof(float));
     if(mesh->x == NULL) 
@@ -121,6 +121,12 @@ int get_space(Mesh* mesh)
         return 1;
     }
 
+    mesh->meshNormals = malloc(VERTICES * sizeof(vec3f));
+    if(mesh->meshNormals == NULL) {
+        fprintf(stderr, "couldn't get space for normals");
+        goto free;
+    }
+
     mesh->boundingBoxes = (BoundingBox*) malloc(sizeof(BoundingBox) * BOUNDINGBOXCOUNT);
     if(mesh->boundingBoxes == NULL)
     {
@@ -131,8 +137,25 @@ int get_space(Mesh* mesh)
     return 0;
 }
 
+int free_space(Mesh** meshes, int meshCount) 
+{
+    for(int i = 0; i < meshCount; i++) 
+    {
+        free(meshes[i]->x);
+        free(meshes[i]->y);
+        free(meshes[i]->z);
 
+        free(meshes[i]->xProj);
+        free(meshes[i]->yProj);
+        free(meshes[i]->zProj);
 
+        free(meshes[i]->torusNormals);
+
+        free(meshes[i]->boundingBoxes);
+    }
+
+    return 0;
+}
 
 void printVector3f(vec3f vector) 
 {

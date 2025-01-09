@@ -27,7 +27,7 @@ void lineBresenham(Mesh* mesh, unsigned int* frameColors, vec2f vertexStart, vec
             break;
         }
 
-        frameColors[((y1 + mesh->Yposition) * SCREENWIDTH) + x1 + mesh->Xposition] = color;
+        frameColors[((y1 + mesh->pos.y + mesh->Yposition) * SCREENWIDTH) + x1 + mesh->pos.y + mesh->Xposition] = color;
 
         if(x1 == x2 && y1 == y2) 
         {
@@ -116,14 +116,12 @@ int checkMeshBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
     return true;
 }
 
-// check for individual bounding box colission
-inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2) {
-    // Check overlap on all axes
+inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2) 
+{
     if (b1->xmin > b2->xmax || b1->xmax < b2->xmin) return false;
     if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) return false;
     if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) return false;
     
-    // If we get here, boxes overlap on all axes
     return true;
 }
 
@@ -140,13 +138,19 @@ int checkIfMeshInRegion(Mesh* mesh, BoundingBox* region)
 
 int checkForMeshCollisionAndUpdateMeshParameters(Mesh** meshes, int numberOfMeshes) 
 {
-    for(int i = 0; i < numberOfMeshes; i++) {
-        for(int j = i + 1; j < numberOfMeshes; j++) {
+    for(int i = 0; i < numberOfMeshes; i++) 
+    {
+        for(int j = i + 1; j < numberOfMeshes; j++) 
+        {
            
-            if(checkMeshBoundingBoxCollision(meshes[i], meshes[j])) {
-                for(int bi = 0; bi < BOUNDINGBOXCOUNT; bi++) {
-                    for(int bj = 0; bj < BOUNDINGBOXCOUNT; bj++) {
-                        if(checkBoundingBoxCollision(&meshes[i]->boundingBoxes[bi], &meshes[j]->boundingBoxes[bj])) {
+            if(checkMeshBoundingBoxCollision(meshes[i], meshes[j])) 
+            {
+                for(int bi = 0; bi < BOUNDINGBOXCOUNT; bi++) 
+                {
+                    for(int bj = 0; bj < BOUNDINGBOXCOUNT; bj++) 
+                    {
+                        if(checkBoundingBoxCollision(&meshes[i]->boundingBoxes[bi], &meshes[j]->boundingBoxes[bj])) 
+                        {
                             
                             // Collision detected - update parameters
 
@@ -159,203 +163,180 @@ int checkForMeshCollisionAndUpdateMeshParameters(Mesh** meshes, int numberOfMesh
             }
         }
     }
+
     return EXIT_SUCCESS;
 }
 
-void Mesh_draw(Mesh* mesh, vec3f* meshNormals, Camera* camera, unsigned int* frameColors, int drawPrecision) 
+void Mesh_draw(Mesh** meshes, int numberOfMeshes, Camera* camera, unsigned int* frameColors, int drawPrecision)
 {
-    if(drawPrecision < 1) 
+    checkForMeshCollisionAndUpdateMeshParameters(meshes, numberOfMeshes);
+    
+    for (int m = 0; m < numberOfMeshes; m++)
     {
-        fprintf(stderr, "write a correct drawprecision, bozo\n");
-        return;
-    }
+        meshes[m]->pos.x += meshes[m]->velocity.x;
+        meshes[m]->pos.y += meshes[m]->velocity.x;
+        meshes[m]->pos.z += meshes[m]->velocity.x;
 
-    int index;
-    int indexPlusPixelsPlusOne;
-    int indexPlusPixels;
-    int indexPlusOne;
-    int nextL;
-    int nextQ;
-
-    int grayscaleRGB;
-    float grayscaleCoefficient;
-    unsigned int color;
-
-    vec2f vertex1;
-    vec2f vertex2;
-    vec2f vertexUpper1;
-    vec2f vertexUpper2;
-    mat4f orthoMatrix;
-    mat4f perspectiveMatrix;
-    mat4f matrix;
-
-       
-/*
-    perspectiveProjectionMatrix(&perspectiveMatrix, camera);
-
-    for(int q = 0; q < PIXELS; q++) 
-    {
-        for(int l = 0; l < PIXELS; l++) 
+        for(int q = 0; q < PIXELS; q++) 
         {
-            index = q * PIXELS + l;
+            for(int l = 0; l < PIXELS; l++) 
+            {
+                int index = q * PIXELS + l;
 
-            vec4f vertex = { mesh->x[index] + mesh->Xposition, mesh->y[index] + mesh->Yposition, mesh->z[index] + mesh->Zposition, 1.0f };
+                if(dotProduct3f(&camera->POV, &meshes[m]->meshNormals[index]) < 0) {
+                    continue;
+                }
 
-            multiplyVectorByMatrix(&perspectiveMatrix, &vertex);
-            vec3f projVertex = perspectiveNdcToScreen(mesh, &vertex);
+                int nextL = (l + 1) % PIXELS;
+                int nextQ = (q + 1) % PIXELS;
 
-            mesh->xProj[index] = projVertex.x;
-            mesh->yProj[index] = projVertex.y;
-            mesh->zProj[index] = projVertex.z;
+                int indexPlusOne = q * PIXELS + nextL;
+                int indexPlusPixels = nextQ  * PIXELS + l;
+                int indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
+
+                float grayscaleCoefficient = dotProduct3f(&meshes[m]->meshNormals[index], &camera->lightingDirectionVector);
+
+                unsigned char grayscaleRGB = (unsigned char)(255 - (132 * (1 - grayscaleCoefficient)));
+                unsigned int color = (0xFF << 24) | (grayscaleRGB << 16) 
+                                                   | (grayscaleRGB << 8) 
+                                                   | grayscaleRGB;
+
+                /*
+                // If you have projected coordinates, you could use these:
+                vertex1.x = meshes[m]->xProj[index];
+                vertex1.y = meshes[m]->yProj[index];
+
+                vertex2.x = meshes[m]->xProj[indexPlusOne];
+                vertex2.y = meshes[m]->yProj[indexPlusOne];
+
+                vertexUpper1.x = meshes[m]->xProj[indexPlusPixels];
+                vertexUpper1.y = meshes[m]->yProj[indexPlusPixels];
+
+                vertexUpper2.x = meshes[m]->xProj[indexPlusPixelsPlusOne];
+                vertexUpper2.y = meshes[m]->yProj[indexPlusPixelsPlusOne];
+                */
+
+                // Otherwise, using “raw” coordinates mixed with yProj:
+                vec2f vertex1;
+                vertex1.x = meshes[m]->x[index];
+                vertex1.y = meshes[m]->yProj[index];
+
+                vec2f vertex2;
+                vertex2.x = meshes[m]->x[indexPlusOne];
+                vertex2.y = meshes[m]->y[indexPlusOne];
+
+                vec2f vertexUpper1;
+                vertexUpper1.x = meshes[m]->x[indexPlusPixels];
+                vertexUpper1.y = meshes[m]->y[indexPlusPixels];
+
+                vec2f vertexUpper2;
+                vertexUpper2.x = meshes[m]->x[indexPlusPixelsPlusOne];
+                vertexUpper2.y = meshes[m]->y[indexPlusPixelsPlusOne];  
+
+                fillTriangle(meshes[m], frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
+                fillTriangle(meshes[m], frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
+            }
         }
-    } */
-
-
-    mesh->pos.x += mesh->velocity.x;
-    mesh->pos.y += mesh->velocity.x;
-    mesh->pos.z += mesh->velocity.x;
-
-    for(int q = 0; q < PIXELS; q++) 
-    {
-        for(int l = 0; l < PIXELS; l++) 
-        {
-            index = q * PIXELS + l;
-
-            if(dotProduct3f(&camera->POV, &meshNormals[index]) < 0) {
-                continue;
-            }
-
-            nextL = (l + 1) % PIXELS;
-            nextQ = (q + 1) % PIXELS;
-
-            indexPlusOne = q * PIXELS + nextL;
-            indexPlusPixels = nextQ * PIXELS + l;
-            indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
-
-            grayscaleCoefficient = (dotProduct3f(&meshNormals[index], &camera->lightingDirectionVector));
-
-            grayscaleRGB = (unsigned char) (255 - (132 * (1 - grayscaleCoefficient)));
-
-            color = (0xFF << 24) | (grayscaleRGB << 16) | (grayscaleRGB << 8) | grayscaleRGB;
-
-/*
-            vertex1.x = mesh->xProj[index];
-            vertex1.y = mesh->yProj[index];
-
-            vertex2.x = mesh->xProj[indexPlusOne];
-            vertex2.y = mesh->yProj[indexPlusOne];
-
-            vertexUpper1.x = mesh->xProj[indexPlusPixels];
-            vertexUpper1.y = mesh->yProj[indexPlusPixels];
-
-            vertexUpper2.x = mesh->xProj[indexPlusPixelsPlusOne];
-            vertexUpper2.y = mesh->yProj[indexPlusPixelsPlusOne];   */
-
-
-            vertex1.x = mesh->x[index];
-            vertex1.y = mesh->yProj[index];
-
-            vertex2.x = mesh->x[indexPlusOne];
-            vertex2.y = mesh->y[indexPlusOne];
-
-            vertexUpper1.x = mesh->x[indexPlusPixels];
-            vertexUpper1.y = mesh->y[indexPlusPixels];
-
-            vertexUpper2.x = mesh->x[indexPlusPixelsPlusOne];
-            vertexUpper2.y = mesh->y[indexPlusPixelsPlusOne];  
-
-            fillTriangle(mesh, frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
-            fillTriangle(mesh, frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
-        }
-    }
-
-    return;
-}  
-
-
-void Mesh_rotate(Mesh* mesh, vec3f* meshNormals, float rad, char axis) 
-{
-    vec3f previousVector;
-
-    float cosRad = (float) cos(rad);
-    float sinRad = (float) sin(rad);
-
-    int index;
-
-    switch(axis) 
-    {
-        case 'x':
-            for (int j = 0; j < PIXELS; j++) 
-            {
-                for (int k = 0; k < PIXELS; k++) 
-                {
-                    index = j * PIXELS + k;
-
-                    previousVector.x = mesh->x[index];
-                    previousVector.y = mesh->y[index];
-                    previousVector.z = mesh->z[index];
-
-                    mesh->y[index] = previousVector.y * cosRad - previousVector.z * sinRad;
-                    mesh->z[index] = previousVector.y * sinRad + previousVector.z * cosRad;
-
-                    previousVector = meshNormals[index];
-
-                    meshNormals[index].y = previousVector.y * cosRad - previousVector.z * sinRad;
-                    meshNormals[index].z = previousVector.y * sinRad + previousVector.z * cosRad;
-                }
-            }
-        break;
-
-        case 'y':
-            for (int j = 0; j < PIXELS; j++) 
-            {
-                for (int k = 0; k < PIXELS; k++) 
-                {
-                    index = j * PIXELS + k;
-
-                    previousVector.x = mesh->x[index];
-                    previousVector.y = mesh->y[index];
-                    previousVector.z = mesh->z[index];
-
-                    mesh->x[index] = previousVector.x * cosRad + previousVector.z * sinRad;
-                    mesh->z[index] = -previousVector.x * sinRad + previousVector.z * cosRad;
-
-                    previousVector = meshNormals[index];
-
-                    meshNormals[index].x = previousVector.x * cosRad + previousVector.z * sinRad;
-                    meshNormals[index].z = -previousVector.x * sinRad + previousVector.z * cosRad;
-                }
-            }
-            break;
-
-        case 'z':
-            for (int j = 0; j < PIXELS; j++) 
-            {
-                for (int k = 0; k < PIXELS; k++) 
-                {
-                    index = j * PIXELS + k;
-
-                    previousVector.x = mesh->x[index];
-                    previousVector.y = mesh->y[index];
-                    previousVector.z = mesh->z[index];
-
-                    mesh->x[index] = previousVector.x * cosRad - previousVector.y * sinRad;  
-                    mesh->y[index] = previousVector.x * sinRad + previousVector.y * cosRad;
-
-                    previousVector = meshNormals[index];
-
-                    meshNormals[index].x = previousVector.x * cosRad - previousVector.y * sinRad;  
-                    meshNormals[index].y = previousVector.x * sinRad + previousVector.y * cosRad; 
-                }
-            }
-            break;
-
-        default:
-        break;
     }
 
     return;
 }
+
+
+
+void Mesh_rotate(Mesh** meshes, int numberOfMeshes, float rad, char axis)
+{
+    float cosRad = (float)cos(rad);
+    float sinRad = (float)sin(rad);
+
+    for (int m = 0; m < numberOfMeshes; m++)
+    {
+        // For each mesh in the array
+        Mesh* currentMesh = meshes[m]; 
+        vec3f previousVector;
+        int index;
+
+        switch (axis) 
+        {
+            case 'x':
+            {
+                for (int j = 0; j < PIXELS; j++) 
+                {
+                    for (int k = 0; k < PIXELS; k++) 
+                    {
+                        index = j * PIXELS + k;
+
+                        // Rotate vertex
+                        previousVector.x = currentMesh->x[index];
+                        previousVector.y = currentMesh->y[index];
+                        previousVector.z = currentMesh->z[index];
+
+                        currentMesh->y[index] = previousVector.y * cosRad - previousVector.z * sinRad;
+                        currentMesh->z[index] = previousVector.y * sinRad + previousVector.z * cosRad;
+
+                        // Rotate normal
+                        previousVector = currentMesh->meshNormals[index];
+                        currentMesh->meshNormals[index].y = previousVector.y * cosRad - previousVector.z * sinRad;
+                        currentMesh->meshNormals[index].z = previousVector.y * sinRad + previousVector.z * cosRad;
+                    }
+                }
+                break;
+            }
+            case 'y':
+            {
+                for (int j = 0; j < PIXELS; j++) 
+                {
+                    for (int k = 0; k < PIXELS; k++) 
+                    {
+                        index = j * PIXELS + k;
+
+                        // Rotate vertex
+                        previousVector.x = currentMesh->x[index];
+                        previousVector.y = currentMesh->y[index];
+                        previousVector.z = currentMesh->z[index];
+
+                        currentMesh->x[index] = previousVector.x * cosRad + previousVector.z * sinRad;
+                        currentMesh->z[index] = -previousVector.x * sinRad + previousVector.z * cosRad;
+
+                        // Rotate normal
+                        previousVector = currentMesh->meshNormals[index];
+                        currentMesh->meshNormals[index].x = previousVector.x * cosRad + previousVector.z * sinRad;
+                        currentMesh->meshNormals[index].z = -previousVector.x * sinRad + previousVector.z * cosRad;
+                    }
+                }
+                break;
+            }
+            case 'z':
+            {
+                for (int j = 0; j < PIXELS; j++) 
+                {
+                    for (int k = 0; k < PIXELS; k++) 
+                    {
+                        index = j * PIXELS + k;
+
+                        // Rotate vertex
+                        previousVector.x = currentMesh->x[index];
+                        previousVector.y = currentMesh->y[index];
+                        previousVector.z = currentMesh->z[index];
+
+                        currentMesh->x[index] = previousVector.x * cosRad - previousVector.y * sinRad;
+                        currentMesh->y[index] = previousVector.x * sinRad + previousVector.y * cosRad;
+
+                        // Rotate normal
+                        previousVector = currentMesh->meshNormals[index];
+                        currentMesh->meshNormals[index].x = previousVector.x * cosRad - previousVector.y * sinRad;  
+                        currentMesh->meshNormals[index].y = previousVector.x * sinRad + previousVector.y * cosRad;
+                    }
+                }
+                break;
+            }
+            default:
+                // Do nothing if the axis is not x, y, or z
+                break;
+        }
+    }
+}
+
 
 
 #endif

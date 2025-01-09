@@ -191,7 +191,7 @@ vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
     };
 }
 
-void sphere_init(Mesh* mesh, vec3f* meshNormals, int radius, int offsetX, int offsetY, int offsetZ) 
+void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ) 
 {
     if(radius <= 10) 
     {
@@ -236,7 +236,7 @@ void sphere_init(Mesh* mesh, vec3f* meshNormals, int radius, int offsetX, int of
             
             normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
-            meshNormals[index] = unit3f(&normalVector);
+            mesh->meshNormals[index] = unit3f(&normalVector);
         }
     }
 
@@ -246,7 +246,7 @@ void sphere_init(Mesh* mesh, vec3f* meshNormals, int radius, int offsetX, int of
     return;
 }
 
-void torus_init(Mesh* mesh, vec3f* meshNormals, int innerRadius, int outerRadius, int offsetX, int offsetY, int offsetZ) 
+void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int offsetY, int offsetZ) 
 {
     if(innerRadius <= 10 || outerRadius <= 10) 
     {
@@ -293,7 +293,7 @@ void torus_init(Mesh* mesh, vec3f* meshNormals, int innerRadius, int outerRadius
             
             normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
-            meshNormals[index] = unit3f(&normalVector);
+            mesh->meshNormals[index] = unit3f(&normalVector);
         }
     }
 
