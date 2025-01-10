@@ -152,6 +152,7 @@ int checkForMeshCollisionAndUpdateMeshParameters(Mesh** meshes, int numberOfMesh
                         if(checkBoundingBoxCollision(&meshes[i]->boundingBoxes[bi], &meshes[j]->boundingBoxes[bj])) 
                         {
                             
+                            
                             // Collision detected - update parameters
 
                             printf("Collision detected");
