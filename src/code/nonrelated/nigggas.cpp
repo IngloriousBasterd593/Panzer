@@ -4,20 +4,26 @@
 
 int main()
 {
-    std::cout << "oh hel yeah" << std::endl;
+    std::cout << "oh hel yeah" << std::endl;\
+    
+    int n;
+    int garakasRindasgarums = 0;
+    int garakoRinduSk = 0;
+    std::cin >> n;
+    int arr[n];
+    memset(arr, 0, sizeof(arr));
 
-    std::vector<std::string> vec;
 
-    vec.push_back("oh");
-    vec.push_back("hel");
-    vec.push_back("yeah");
-
-    for(auto i : vec)
+    for (int i = 0; i < n; i++)
     {
-        std::cout << i << std::endl;
+        
     }
 
 
+
+    
+
+    std::cout << garakasRindasgarums << garakoRinduSk << std::endl;
 
     return 0;
 }

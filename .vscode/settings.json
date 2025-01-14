@@ -111,6 +111,8 @@
     "text_encoding": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp",
-    "stdbool.h": "c"
+    "stdbool.h": "c",
+    "cstdarg": "cpp",
+    "cinttypes": "cpp"
   }
 }

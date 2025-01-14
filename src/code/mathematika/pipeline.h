@@ -142,7 +142,6 @@ int checkForMeshCollisionAndUpdateMeshParameters(Mesh** meshes, int numberOfMesh
     {
         for(int j = i + 1; j < numberOfMeshes; j++) 
         {
-           
             if(checkMeshBoundingBoxCollision(meshes[i], meshes[j])) 
             {
                 for(int bi = 0; bi < BOUNDINGBOXCOUNT; bi++) 
@@ -172,7 +171,7 @@ void Mesh_draw(Mesh** meshes, int numberOfMeshes, Camera* camera, unsigned int* 
 {
     checkForMeshCollisionAndUpdateMeshParameters(meshes, numberOfMeshes);
     
-    for (int m = 0; m < numberOfMeshes; m++)
+    for(int m = 0; m < numberOfMeshes; m++)
     {
         meshes[m]->pos.x += meshes[m]->velocity.x;
         meshes[m]->pos.y += meshes[m]->velocity.x;

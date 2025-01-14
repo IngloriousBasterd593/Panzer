@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <cstdlib>
 
 typedef struct matL
 {
@@ -12,7 +12,7 @@ matL nullMat = {0, 0, {{0}}};
 
 matL createMatrix(int sizeX, int sizeY)
 {
-    matL res;
+    matL res = createMatrix(sizeX, sizeY);
 
     res.m = (long**) malloc(sizeX * sizeof(long*));
 
@@ -39,7 +39,7 @@ matL multiplyMatrices(matL A, matL B)
 {
     if(A.sizeY != B.sizeX)
     {
-        printf("ahh");
+        std::cout << "niggadolph yeass" << std::endl;
         return nullMat;
     }
 
@@ -74,12 +74,12 @@ void populateMatrix(matL* mat, long* data)
 long* getMatrixInput()
 {
     int n;
-    scanf("%d", &n);
+    std::cin >> n;
     long* res = (long*) malloc(n * sizeof(long));
 
     for(int i = 0; i < n; i++)
     {
-        scanf("%li", &res[i]);
+        std::cin >> res[i];
     }
 
     return res;
@@ -92,9 +92,9 @@ void printMatrix(matL mat)
     {
         for(int j = 0; j < mat.sizeY; j++)
         {
-            printf("%li ", mat.m[i][j]);
+            std::cout << mat.m[i][j] << " ";
         }
-        printf("\n");
+        std::cout << std::endl;
     }
 }
 
@@ -102,14 +102,11 @@ int main()
 {
     int x, y;
 
-    printf("Enter the size of the matrices: ");
-
-    scanf("%d %d", &x, &y);
+    std::cin >> x;
+    std::cin >> y;
 
     matL A = createMatrix(x, y);
     matL B = createMatrix(x, y);
-
-    // printMatrix(A);
 
     long* data = getMatrixInput();
 
@@ -122,8 +119,6 @@ int main()
     populateMatrix(&B, data);
 
     free(data);
-
-    printMatrix(A);
 
     matL res = multiplyMatrices(A, B);
 
