@@ -26,19 +26,6 @@ typedef struct {
     Node* next;
 } Node;
 
-
-static enum Datatypes {
-    int,
-    long, 
-    float,
-    double,
-    char,
-    char*,
-    char**,
-    int*,
-    float*
-}
-
 int bubbleSort(int* arr, int len)
 {
     if(arr == NULL)
@@ -403,73 +390,79 @@ int initLinkedList(Node* list, int len)
     return EXIT_SUCCESS;
 }
 
-
-int addNewNode(Node* list, int len)
+Node* createNode(void* data, size_t size)
 {
-
-
-    return EXIT_SUCCESS;
-}
-
-
-int deleteNode(Node* list, int len)
-{
-
-
-    return EXIT_SUCCESS;
-}
-
-int appendToNode(Node* list, void* data, enum Datatypes type)
-{
-    switch(type) 
+    Node* node = malloc(sizeof(Node));
+    if(node == NULL)
     {
-        case: int*
+        return NULL;
+    }
 
-        break;
+    node->data = malloc(size);
+    if(node->data == NULL)
+    {
+        free(node);
+        return NULL;
+    }
+    memcpy(node->data, data, size);
 
-        case: long*
+    return node;
+}
 
-        break;
+int nodePushBack(Node* head, Node* node)
+{
+    if(head == NULL || node == NULL)
+    {
+        fprintf(stderr, "dumbass");
+        return EXIT_FAILURE;
+    }
 
-        case: float*
+    Node* curr = head;
 
-        break;
+    while(1)
+    {
+        curr = curr->next;
 
-        case: double*
+        if(curr == NULL)
+        {
+            curr = node;
+            return EXIT_SUCCESS;
+        }
 
-        break;
+    }
 
-        case: char*
+    return EXIT_SUCCESS;
+}
 
-        break;
+int nodePushFront(Node* head, Node* newHead)
+{
+    if(newHead == NULL || head == NULL)
+    {
+        fprintf(stderr, "dumbass");
+        return EXIT_FAILURE;
+    }
 
-        case: char**,
+    newHead->next = head;
 
-        break;
+    return EXIT_SUCCESS;
+}
 
-        case: int**
+int deleteNode(Node* head, int n)
+{
 
-        break;
-
-        default: 
-        break;
+    for(int i = 0; i < n; i++)
+    {
+        
     }
 
 
+
+
     return EXIT_SUCCESS;
 }
 
-static enum Datatypes {
-    int,
-    long, 
-    float,
-    double,
-    char,
-    char*,
-    char**,
-    int*,
-    float*
-}
+
+
 
 
 #endif

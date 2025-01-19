@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
         goto quit;
     }
 
+
     clock_t start, end;
     double cpu_time_used;
 
@@ -76,7 +77,7 @@ int main(int argc, char** argv) {
 
 
 
-    printf("%f %f %f\n", sphere.velocity.x, sphere.velocity.x, sphere.velocity.x);
+    printf("%f %f %f\n", sphere.velocity.x, sphere.velocity.y, sphere.velocity.z);
 
 
 

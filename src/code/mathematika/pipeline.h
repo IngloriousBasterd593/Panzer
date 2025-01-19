@@ -94,45 +94,12 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
     return;
 }
 
-
-// check for mesh bounding box colission
-int checkMeshBoundingBoxCollision(Mesh* mesh1, Mesh* mesh2)
-{
-    if(mesh1->boundingBox.xmax < mesh2->boundingBox.xmin || mesh1->boundingBox.xmin > mesh2->boundingBox.xmax) 
-    {
-        return false;
-    }
-
-    if(mesh1->boundingBox.ymax < mesh2->boundingBox.ymin || mesh1->boundingBox.ymin > mesh2->boundingBox.ymax) 
-    {
-        return false;
-    }
-
-    if(mesh1->boundingBox.zmax < mesh2->boundingBox.zmin || mesh1->boundingBox.zmin > mesh2->boundingBox.zmax) 
-    {
-        return false;
-    }
-
-    return true;
-}
-
 inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2) 
 {
     if (b1->xmin > b2->xmax || b1->xmax < b2->xmin) return false;
     if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) return false;
     if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) return false;
     
-    return true;
-}
-
-// check if mesh is in region
-int checkIfMeshInRegion(Mesh* mesh, BoundingBox* region)
-{
-    if(mesh->pos.x > region.xmin && mesh->pos.x < region.xmax && mesh->pos.y > region.ymin && mesh->pos.y < region.ymax && mesh->pos.z > region.zmin && mesh->pos.z < region.zmax)
-    {
-        return true;
-    } 
-
     return true;
 }
 

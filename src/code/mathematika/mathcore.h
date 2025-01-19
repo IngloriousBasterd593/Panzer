@@ -191,6 +191,62 @@ vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
     };
 }
 
+// doesnt work
+void insertNodeIntoOcttree(OctreeNode* head, AABB* boundingBox, Mesh* mesh) 
+{
+    OctreeNode* currentNode = head;
+    OctreeNode* newNode = malloc(sizeof(OctreeNode));
+    if(newNode == NULL) 
+    {
+        fprintf(stderr, "couldnt get space");
+        return;
+    }
+
+    newNode->boundingBox = *boundingBox;
+    newNode->next = NULL;
+
+    while(1) 
+    {
+        if(currentNode->next == NULL) 
+        {
+            currentNode->next = newNode;
+            break;
+        } else 
+        {
+            currentNode = currentNode->next;
+        }
+    }
+
+    return;
+}
+
+void partitionBoundingBox(AABB* boundingBox, OctreeNode* head, Mesh* mesh) 
+{
+    float xmid = (boundingBox->xmax + boundingBox->xmin) / 2;
+    float ymid = (boundingBox->ymax + boundingBox->ymin) / 2;
+    float zmid = (boundingBox->zmax + boundingBox->zmin) / 2;
+
+    AABB boundingBoxes[8] = {
+        { boundingBox->xmin, boundingBox->ymin, boundingBox->zmin, xmid, ymid, zmid },
+        { xmid, boundingBox->ymin, boundingBox->zmin, boundingBox->xmax, ymid, zmid },
+        { boundingBox->xmin, ymid, boundingBox->zmin, xmid, boundingBox->ymax, zmid },
+        { xmid, ymid, boundingBox->zmin, boundingBox->xmax, boundingBox->ymax, zmid },
+        { boundingBox->xmin, boundingBox->ymin, zmid, xmid, ymid, boundingBox->zmax },
+        { xmid, boundingBox->ymin, zmid, boundingBox->xmax, ymid, boundingBox->zmax },
+        { boundingBox->xmin, ymid, zmid, xmid, boundingBox->ymax, boundingBox->zmax },
+        { xmid, ymid, zmid, boundingBox->xmax, boundingBox->ymax, boundingBox->zmax }
+    };
+
+    for(int i = 0; i < 8; i++) 
+    {
+        insertNodeIntoOcttree(head, &boundingBoxes[i], mesh);
+    }
+
+    return;
+}
+
+
+
 void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ) 
 {
     if(radius <= 10) 
@@ -198,7 +254,7 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
         fprintf(stderr, "write a correct radius, bozo\n");
         return;
     }
-    mesh->radius = radius;
+
     mesh->pos.x = offsetX;
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;

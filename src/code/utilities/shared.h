@@ -127,8 +127,8 @@ int get_space(Mesh* meshes)
         goto free;
     }
 
-    mesh->boundingBoxes = (BoundingBox*) malloc(sizeof(BoundingBox) * BOUNDINGBOXCOUNT);
-    if(mesh->boundingBoxes == NULL)
+    mesh->AABBes = (AABB*) malloc(sizeof(AABB) * AABBCOUNT);
+    if(mesh->AABBes == NULL)
     {
         fprintf(stderr, "Failed to initialize heap\n");
         return 1;
@@ -151,7 +151,7 @@ int free_space(Mesh** meshes, int meshCount)
 
         free(meshes[i]->torusNormals);
 
-        free(meshes[i]->boundingBoxes);
+        free(meshes[i]->AABBs);
     }
 
     return 0;

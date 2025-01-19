@@ -27,8 +27,8 @@
 
 #define PIXELS 100                                  // loop counter for 3 dimensional shape access    
 #define VERTICES (PIXELS * PIXELS)                  // number of vertices for each object
-#define BOUNDINGBOXSTEP 25             
-#define BOUNDINGBOXCOUNT (VERTICES / BOUNDINGBOXSTEP)             
+#define AABBSTEP 25             
+#define AABBCOUNT (VERTICES / AABBSTEP)             
 #define PI M_PI
 #define TWOPI (2 * PI)
 #define TWOPIOVERPIXELS ((TWOPI) / (PIXELS - 1))    // step size for initialization
@@ -88,7 +88,7 @@ typedef struct {
     float xmax;
     float ymax;
     float zmax;
-} BoundingBox;
+} AABB;
 
 typedef struct {
     float* x;
@@ -101,8 +101,8 @@ typedef struct {
     vec3i pos;
     vec3f meshMax;
     vec3f meshMin;
-    BoundingBox boundingBox;
-    BoundingBox* boundingBoxes;
+    AABB AABB;
+    OctreeNode* head;
     vec3i velocity;
     vec3f* meshNormals;
 } Mesh;
@@ -120,9 +120,14 @@ typedef struct {
     float bottom;
 } Camera;
 
+// create an octtree struct
+typedef struct OctreeNode {
+    struct OctreeNode* children[8];
+    AABB boundingBox;
+} OctreeNode;
 
 const static vec3i zerovector3i = {0, 0, 0};
-const static BoundingBox simulationSpace = {-2000, -2000, -1000, 2000, 2000, 1000};
+const static AABB simulationSpace = {-2000, -2000, -1000, 2000, 2000, 1000};
 
 
 #endif

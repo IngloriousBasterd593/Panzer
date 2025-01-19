@@ -113,6 +113,24 @@
     "variant": "cpp",
     "stdbool.h": "c",
     "cstdarg": "cpp",
-    "cinttypes": "cpp"
+    "cinttypes": "cpp",
+    "bitset": "cpp",
+    "chrono": "cpp",
+    "condition_variable": "cpp",
+    "cstring": "cpp",
+    "ratio": "cpp",
+    "mutex": "cpp",
+    "print": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp",
+    "__bit_reference": "cpp",
+    "__locale": "cpp",
+    "__split_buffer": "cpp",
+    "__verbose_abort": "cpp",
+    "execution": "cpp",
+    "ios": "cpp",
+    "locale": "cpp",
+    "queue": "cpp",
+    "stack": "cpp"
   }
 }
