@@ -191,56 +191,87 @@ vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
     };
 }
 
-// doesnt work
-void insertNodeIntoOcttree(OctreeNode* head, AABB* boundingBox, Mesh* mesh) 
+// a function to traverse an octree
+void traverseOctree(OctreeNode* head) 
 {
-    OctreeNode* currentNode = head;
-    OctreeNode* newNode = malloc(sizeof(OctreeNode));
-    if(newNode == NULL) 
+    if(head == NULL) 
     {
-        fprintf(stderr, "couldnt get space");
         return;
     }
 
-    newNode->boundingBox = *boundingBox;
-    newNode->next = NULL;
-
-    while(1) 
+    for(int i = 0; i < 8; i++) 
     {
-        if(currentNode->next == NULL) 
-        {
-            currentNode->next = newNode;
-            break;
-        } else 
-        {
-            currentNode = currentNode->next;
-        }
+        partitionBoundingBox(head->children[i]->boundingBoxes, head->boundingBox);
+        traverseOctree(head->children[i]);
     }
-
-    return;
 }
 
-void partitionBoundingBox(AABB* boundingBox, OctreeNode* head, Mesh* mesh) 
+void partitionBoundingBox(AABB* boundingBoxes[8], AABB* boundingBox) 
 {
     float xmid = (boundingBox->xmax + boundingBox->xmin) / 2;
     float ymid = (boundingBox->ymax + boundingBox->ymin) / 2;
     float zmid = (boundingBox->zmax + boundingBox->zmin) / 2;
 
-    AABB boundingBoxes[8] = {
-        { boundingBox->xmin, boundingBox->ymin, boundingBox->zmin, xmid, ymid, zmid },
-        { xmid, boundingBox->ymin, boundingBox->zmin, boundingBox->xmax, ymid, zmid },
-        { boundingBox->xmin, ymid, boundingBox->zmin, xmid, boundingBox->ymax, zmid },
-        { xmid, ymid, boundingBox->zmin, boundingBox->xmax, boundingBox->ymax, zmid },
-        { boundingBox->xmin, boundingBox->ymin, zmid, xmid, ymid, boundingBox->zmax },
-        { xmid, boundingBox->ymin, zmid, boundingBox->xmax, ymid, boundingBox->zmax },
-        { boundingBox->xmin, ymid, zmid, xmid, boundingBox->ymax, boundingBox->zmax },
-        { xmid, ymid, zmid, boundingBox->xmax, boundingBox->ymax, boundingBox->zmax }
-    };
-
-    for(int i = 0; i < 8; i++) 
+    for (int i = 0; i < 8; i++)
     {
-        insertNodeIntoOcttree(head, &boundingBoxes[i], mesh);
+        boundingBoxes[i] = (AABB*) malloc(sizeof(AABB));
     }
+
+    boundingBoxes[0]->xmin = boundingBox->xmin;
+    boundingBoxes[0]->xmax = xmid;
+    boundingBoxes[0]->ymin = boundingBox->ymin;
+    boundingBoxes[0]->ymax = ymid;
+    boundingBoxes[0]->zmin = boundingBox->zmin;
+    boundingBoxes[0]->zmax = zmid;
+
+    boundingBoxes[1]->xmin = xmid;
+    boundingBoxes[1]->xmax = boundingBox->xmax;
+    boundingBoxes[1]->ymin = boundingBox->ymin;
+    boundingBoxes[1]->ymax = ymid;
+    boundingBoxes[1]->zmin = boundingBox->zmin;
+    boundingBoxes[1]->zmax = zmid;
+
+    boundingBoxes[2]->xmin = boundingBox->xmin;
+    boundingBoxes[2]->xmax = xmid;
+    boundingBoxes[2]->ymin = ymid;
+    boundingBoxes[2]->ymax = boundingBox->ymax;
+    boundingBoxes[2]->zmin = boundingBox->zmin;
+    boundingBoxes[2]->zmax = zmid;
+
+    boundingBoxes[3]->xmin = xmid;
+    boundingBoxes[3]->xmax = boundingBox->xmax;
+    boundingBoxes[3]->ymin = ymid;
+    boundingBoxes[3]->ymax = boundingBox->ymax;
+    boundingBoxes[3]->zmin = boundingBox->zmin;
+    boundingBoxes[3]->zmax = zmid;
+    
+    boundingBoxes[4]->xmin = boundingBox->xmin;
+    boundingBoxes[4]->xmax = xmid;
+    boundingBoxes[4]->ymin = boundingBox->ymin;
+    boundingBoxes[4]->ymax = ymid;
+    boundingBoxes[4]->zmin = zmid;
+    boundingBoxes[4]->zmax = boundingBox->zmax;
+
+    boundingBoxes[5]->xmin = xmid;
+    boundingBoxes[5]->xmax = boundingBox->xmax;
+    boundingBoxes[5]->ymin = boundingBox->ymin;
+    boundingBoxes[5]->ymax = ymid;
+    boundingBoxes[5]->zmin = zmid;
+    boundingBoxes[5]->zmax = boundingBox->zmax;
+
+    boundingBoxes[6]->xmin = boundingBox->xmin;
+    boundingBoxes[6]->xmax = xmid;
+    boundingBoxes[6]->ymin = ymid;
+    boundingBoxes[6]->ymax = boundingBox->ymax;
+    boundingBoxes[6]->zmin = zmid;
+    boundingBoxes[6]->zmax = boundingBox->zmax;
+
+    boundingBoxes[7]->xmin = xmid;
+    boundingBoxes[7]->xmax = boundingBox->xmax;
+    boundingBoxes[7]->ymin = ymid;
+    boundingBoxes[7]->ymax = boundingBox->ymax;
+    boundingBoxes[7]->zmin = zmid;
+    boundingBoxes[7]->zmax = boundingBox->zmax;
 
     return;
 }

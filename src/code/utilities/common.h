@@ -121,9 +121,10 @@ typedef struct {
 } Camera;
 
 // create an octtree struct
-typedef struct OctreeNode {
-    struct OctreeNode* children[8];
+typedef struct {
+    OctreeNode* children[8];
     AABB boundingBox;
+    
 } OctreeNode;
 
 const static vec3i zerovector3i = {0, 0, 0};
