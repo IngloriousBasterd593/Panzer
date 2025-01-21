@@ -101,8 +101,7 @@ typedef struct {
     vec3i pos;
     vec3f meshMax;
     vec3f meshMin;
-    AABB AABB;
-    OctreeNode* head;
+    TreeNode* head;
     vec3i velocity;
     vec3f* meshNormals;
 } Mesh;
@@ -125,6 +124,11 @@ typedef struct {
     OctreeNode* children[8];
     AABB* boundingBox;
 } OctreeNode;
+
+typedef struct {
+    TreeNode* children[2];
+    AABB* boundingBox;
+} TreeNode;
 
 const static vec3i zerovector3i = {0, 0, 0};
 const static AABB simulationSpace = {-2000, -2000, -1000, 2000, 2000, 1000};

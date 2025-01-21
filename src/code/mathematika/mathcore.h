@@ -35,6 +35,11 @@ float dotProduct2f(vec2f* v1, vec2f* v2)
     return v1->x * v2->x + v1->y * v2->y;
 }
 
+float magnitude3fS(vec3f* v) 
+{
+    return v->x * v->x + v->y * v->y + v->z * v->z;
+}
+
 float maxOfArrayF(float* array) 
 {
     float maxValue = array[0];
@@ -168,8 +173,25 @@ vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
     };
 }
 
-// a function to traverse an octree
-void traverseOctree(Mesh* mesh, (void (*callback)(Mesh*))) 
+unsigned int UDFS(vec3f* v1, vec3f* v2)
+{
+    return (v2->x - v1->x) * (v2->x - v1->x) + (v2->y - v1->y) * (v2->y - v1->y) + (v2->z - v1->z) * (v2->z - v1->z);
+}
+
+int checkBoundingBoxCollision(AABB* b1, AABB* b2) 
+{
+    if (b1->xmin > b2->xmax || b1->xmax < b2->xmin)
+        return false;
+    if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) 
+        return false;
+    if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) 
+        return false;
+    
+    return true;
+}
+
+/*
+void traverseOctree(Mesh* mesh, (void (*callback) (Mesh*))) 
 {
     if(mesh->head == NULL) 
     {
@@ -290,7 +312,28 @@ void partitionMeshBoundingBox(Mesh* mesh)
     return;
 }
 
-void partitionMeshBoundingBox(AABB b, AABB* result[8]) 
+void compareOctreeAABBs(OctreeNode* n1, OctreeNode* n2) 
+{
+    for(int i = 0; i < 8; i++)
+    {
+        for(int j = 0; j < 8; j++)
+        {
+            if(n1->children[i] == NULL || n2->children[j] == NULL)
+            {
+                
+            }
+
+            if(checkBoundingBoxCollision(n1->children[i]->boundingBox, n2->children[j]->boundingBox))
+            {
+                compareOctreeAABBs(n1->children[i], n2->children[j]);
+            }
+        }
+    }
+
+    return;
+}
+
+void partitionBoundingBox(AABB b, AABB* result[8]) 
 {
     for(int i = 0; i < 8; i++)
     {
@@ -364,71 +407,63 @@ void partitionMeshBoundingBox(AABB b, AABB* result[8])
     return;
 }
 
+*/
 
-
-void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ) 
+void traverseBVH(TreeNode* node, void (*callback) (TreeNode*))
 {
-    if(radius <= 10) 
+    if(node == NULL) 
     {
-        fprintf(stderr, "write a correct radius, bozo\n");
         return;
     }
 
-    mesh->pos.x = offsetX;
-    mesh->pos.y = offsetY;
-    mesh->pos.z = offsetZ;
-    
-    int index, nextL, nextQ;
-    vec3f normalVector, partialDerivativeU, partialDerivativeV;
-    
-    for(int j = 0; j < PIXELS; j++) 
+    callback(node);
+
+    traverseBVH(node->children[0], callback);
+    traverseBVH(node->children[1], callback);
+}
+
+void initializeBVHTree(TreeNode* head)
+{
+    head->boundingBox[0] = (AABB*) malloc(sizeof(AABB));
+    if(head->boundingBox[0] == NULL)
     {
-        for(int k = 0; k < PIXELS; k++) 
-        {
-            index = j * PIXELS + k; 
-            mesh->x[index] = radius * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
-            mesh->y[index] = radius * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
-            mesh->z[index] = radius * cos(PIOVERPIXELS * j);
-        }
-    }
-
-    for(int j = 0; j < PIXELS; j++) 
-    {
-        for(int k = 0; k < PIXELS; k++) 
-        {
-            nextL = (k + 1) % PIXELS;
-            nextQ = (j + 1) % PIXELS;
-
-            index = j * PIXELS + k; 
-
-            partialDerivativeU.x = mesh->x[index] - mesh->x[index + nextL];
-            partialDerivativeU.y = mesh->y[index] - mesh->y[index + nextL];
-            partialDerivativeU.z = mesh->z[index] - mesh->z[index + nextL];
-
-            partialDerivativeV.x = mesh->x[index] - mesh->x[nextQ * PIXELS + k];
-            partialDerivativeV.y = mesh->y[index] - mesh->y[nextQ * PIXELS + k];
-            partialDerivativeV.z = mesh->z[index] - mesh->z[nextQ * PIXELS + k];
-            
-            normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
-
-            mesh->meshNormals[index] = unit3f(&normalVector);
-        }
-    }
-
-    mesh->head = (OctreeNode*) malloc(sizeof(OctreeNode));
-    if(mesh->head == NULL)
-    {
-        fprintf(stderr, "Failed to allocate memory for octree\n");
+        fprintf(stderr, "Failed to allocate memory for bounding box\n");
         return;
     }
 
-    generateBoundingBox(mesh);
+    for(int i = 0; i < 2; i++)
+    {
+        head->children[i] = (TreeNode*) malloc(sizeof(TreeNode));
+        if(head->children[i] == NULL)
+        {
+            for(int j = 0; j < i; j++)
+            {
+                free(head->children[j]);
+            }
 
-    // neefektivi asf
-    traverseOctree(mesh, &createOctree);
-    traverseOctree(mesh, &partitionBoundingBox);
+            fprintf(stderr, "Failed to allocate memory for children\n");
+            return;
+        }
+    }
+}
 
-    mesh->velocity = zerovector3i;
+void compareBVHAABBs(TreeNode* n1, TreeNode* n2)
+{
+    if(n1 == NULL || n2 == NULL || n1->boundingBox == NULL || n2->boundingBox == NULL) 
+    {
+        return;
+    }
+
+    if(checkBoundingBoxCollision(n1->boundingBox, n2->boundingBox)) 
+    {
+        for(int i = 0; i < 2; i++)
+        {
+            for(int j = 0; j < 2; j++)
+            {
+                compareBVHAABBs(n1->children[i], n2->children[j]);
+            }
+        }
+    }
 
     return;
 }
