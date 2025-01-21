@@ -157,6 +157,12 @@ int free_space(Mesh** meshes, int meshCount)
     return 0;
 }
 
+void initializeScene(Mesh** meshes, )
+{
+    
+
+}
+
 void printVector3f(vec3f vector) 
 {
     printf("%f %f %f\n", vector.x, vector.y, vector.z);

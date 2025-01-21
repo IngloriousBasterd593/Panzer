@@ -43,7 +43,7 @@
 #define BUFFLEN 1024                                // safety
 #define FAR 2                                     // far plane distance for perspective projection
 #define NEAR 1                                    // near plane distance for perspective projection
-
+#define TREEDEPTH 7                                // depth of the octree
 // structs
 
 typedef struct {
@@ -123,8 +123,7 @@ typedef struct {
 // create an octtree struct
 typedef struct {
     OctreeNode* children[8];
-    AABB boundingBox;
-    
+    AABB* boundingBox;
 } OctreeNode;
 
 const static vec3i zerovector3i = {0, 0, 0};

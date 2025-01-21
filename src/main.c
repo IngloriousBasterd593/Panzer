@@ -6,9 +6,9 @@
 
 int main(int argc, char** argv) {
 
-    SDL_Window* window = NULL;
-    SDL_Texture* texture = NULL;
-    SDL_Renderer* renderer = NULL;
+    SDL_Window** window = NULL;
+    SDL_Texture** texture = NULL;
+    SDL_Renderer** renderer = NULL;
 
 
 

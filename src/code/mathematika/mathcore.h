@@ -91,35 +91,12 @@ float minOfTwoF(float num1, float num2)
 
 void generateBoundingBox(Mesh* mesh)
 {
-    mesh->boundingBox.xmax = maxOfArrayF(mesh->x);
-    mesh->boundingBox.ymax = minOfArrayF(mesh->x);
-    mesh->boundingBox.zmax = maxOfArrayF(mesh->y);
-    mesh->boundingBox.xmin = minOfArrayF(mesh->y);
-    mesh->boundingBox.ymin = maxOfArrayF(mesh->z);
-    mesh->boundingBox.zmin = minOfArrayF(mesh->z);
-
-    int index;
-    int indexPlusPixelsPlusOne;
-    int nextJ;
-    int nextI;
-
-    for(int i = 0; i < BOUNDINGBOXCOUNT; i += BOUNDINGBOXSTEP)
-    {
-        for(int j = 0; j < BOUNDINGBOXCOUNT; j += BOUNDINGBOXSTEP)
-        {
-            index = i * PIXELS + j;
-            nextJ = (j + BOUNDINGBOXSTEP) % PIXELS;
-            nextI = (i + BOUNDINGBOXSTEP) % PIXELS;
-            indexPlusPixelsPlusOne = nextI * PIXELS + nextJ;
-
-            mesh->boundingBoxes[index].xmax = maxOfTwoF(mesh->x[index], mesh->x[indexPlusPixelsPlusOne]);
-            mesh->boundingBoxes[index].xmin = minOfTwoF(mesh->x[index], mesh->x[indexPlusPixelsPlusOne]);   
-            mesh->boundingBoxes[index].ymax = maxOfTwoF(mesh->y[index], mesh->y[indexPlusPixelsPlusOne]);
-            mesh->boundingBoxes[index].ymin = minOfTwoF(mesh->y[index], mesh->y[indexPlusPixelsPlusOne]);   
-            mesh->boundingBoxes[index].zmax = maxOfTwoF(mesh->z[index], mesh->z[indexPlusPixelsPlusOne]);
-            mesh->boundingBoxes[index].zmin = minOfTwoF(mesh->z[index], mesh->z[indexPlusPixelsPlusOne]);
-        }
-    }
+    mesh->AABB.xmax = maxOfArrayF(mesh->x);
+    mesh->AABB.ymax = minOfArrayF(mesh->x);
+    mesh->AABB.zmax = maxOfArrayF(mesh->y);
+    mesh->AABB.xmin = minOfArrayF(mesh->y);
+    mesh->AABB.ymin = maxOfArrayF(mesh->z);
+    mesh->AABB.zmin = minOfArrayF(mesh->z);
 
     return;
 }
@@ -192,86 +169,197 @@ vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
 }
 
 // a function to traverse an octree
-void traverseOctree(OctreeNode* head) 
+void traverseOctree(Mesh* mesh, (void (*callback)(Mesh*))) 
 {
-    if(head == NULL) 
+    if(mesh->head == NULL) 
     {
         return;
     }
 
     for(int i = 0; i < 8; i++) 
     {
-        partitionBoundingBox(head->children[i]->boundingBoxes, head->boundingBox);
+        callback(mesh);
         traverseOctree(head->children[i]);
     }
 }
 
-void partitionBoundingBox(AABB* boundingBoxes[8], AABB* boundingBox) 
+void createMeshOctree(Mesh* mesh)
 {
-    float xmid = (boundingBox->xmax + boundingBox->xmin) / 2;
-    float ymid = (boundingBox->ymax + boundingBox->ymin) / 2;
-    float zmid = (boundingBox->zmax + boundingBox->zmin) / 2;
+    for(int i = 0; i < 8; i++)
+    {
+        head->children[i] = (OctreeNode*) malloc(sizeof(OctreeNode));
+        if(head->children[i] == NULL)
+        {
+            for(int j = 0; j < i; j++)
+            {
+                free(head->children[j]);
+            }
+
+            fprintf(stderr, "Failed to allocate memory for octree child\n");
+            return;
+        }
+
+        head->children[i]->children = NULL;
+        head->children[i]->boundingBox = NULL;
+    }
+
+    return;
+}
+
+void partitionMeshBoundingBox(Mesh* mesh) 
+{
+    if (mesh->head == NULL)
+    {
+        return;
+    }
+
+    float xmid = (mesh->head->boundingBox->xmax + mesh->head->boundingBox->xmin) / 2;
+    float ymid = (mesh->head->boundingBox->ymax + mesh->head->boundingBox->ymin) / 2;
+    float zmid = (mesh->head->boundingBox->zmax + mesh->head->boundingBox->zmin) / 2;
 
     for (int i = 0; i < 8; i++)
     {
-        boundingBoxes[i] = (AABB*) malloc(sizeof(AABB));
+        mesh->head->children[i]->boundingBox = (AABB*) malloc(sizeof(AABB));
+        if (mesh->head->children[i]->boundingBox == NULL)
+        {
+            for(int j = 0; j < i; j++)
+            {
+                free(mesh->head->children[j]->boundingBox);
+            }
+            fprintf(stderr, "Failed to allocate memory for boundingBox\n");
+            return;
+        }
     }
 
-    boundingBoxes[0]->xmin = boundingBox->xmin;
-    boundingBoxes[0]->xmax = xmid;
-    boundingBoxes[0]->ymin = boundingBox->ymin;
-    boundingBoxes[0]->ymax = ymid;
-    boundingBoxes[0]->zmin = boundingBox->zmin;
-    boundingBoxes[0]->zmax = zmid;
+    mesh->head->children[0]->boundingBox->xmin = mesh->head->boundingBox->xmin;
+    mesh->head->children[0]->boundingBox->xmax = xmid;
+    mesh->head->children[0]->boundingBox->ymin = mesh->head->boundingBox->ymin;
+    mesh->head->children[0]->boundingBox->ymax = ymid;
+    mesh->head->children[0]->boundingBox->zmin = mesh->head->boundingBox->zmin;
+    mesh->head->children[0]->boundingBox->zmax = zmid;
 
-    boundingBoxes[1]->xmin = xmid;
-    boundingBoxes[1]->xmax = boundingBox->xmax;
-    boundingBoxes[1]->ymin = boundingBox->ymin;
-    boundingBoxes[1]->ymax = ymid;
-    boundingBoxes[1]->zmin = boundingBox->zmin;
-    boundingBoxes[1]->zmax = zmid;
+    mesh->head->children[1]->boundingBox->xmin = xmid;
+    mesh->head->children[1]->boundingBox->xmax = mesh->head->boundingBox->xmax;
+    mesh->head->children[1]->boundingBox->ymin = mesh->head->boundingBox->ymin;
+    mesh->head->children[1]->boundingBox->ymax = ymid;
+    mesh->head->children[1]->boundingBox->zmin = mesh->head->boundingBox->zmin;
+    mesh->head->children[1]->boundingBox->zmax = zmid;
 
-    boundingBoxes[2]->xmin = boundingBox->xmin;
-    boundingBoxes[2]->xmax = xmid;
-    boundingBoxes[2]->ymin = ymid;
-    boundingBoxes[2]->ymax = boundingBox->ymax;
-    boundingBoxes[2]->zmin = boundingBox->zmin;
-    boundingBoxes[2]->zmax = zmid;
+    mesh->head->children[2]->boundingBox->xmin = mesh->head->boundingBox->xmin;
+    mesh->head->children[2]->boundingBox->xmax = xmid;
+    mesh->head->children[2]->boundingBox->ymin = ymid;
+    mesh->head->children[2]->boundingBox->ymax = mesh->head->boundingBox->ymax;
+    mesh->head->children[2]->boundingBox->zmin = mesh->head->boundingBox->zmin;
+    mesh->head->children[2]->boundingBox->zmax = zmid;
 
-    boundingBoxes[3]->xmin = xmid;
-    boundingBoxes[3]->xmax = boundingBox->xmax;
-    boundingBoxes[3]->ymin = ymid;
-    boundingBoxes[3]->ymax = boundingBox->ymax;
-    boundingBoxes[3]->zmin = boundingBox->zmin;
-    boundingBoxes[3]->zmax = zmid;
+    mesh->head->children[3]->boundingBox->xmin = xmid;
+    mesh->head->children[3]->boundingBox->xmax = mesh->head->boundingBox->xmax;
+    mesh->head->children[3]->boundingBox->ymin = ymid;
+    mesh->head->children[3]->boundingBox->ymax = mesh->head->boundingBox->ymax;
+    mesh->head->children[3]->boundingBox->zmin = mesh->head->boundingBox->zmin;
+    mesh->head->children[3]->boundingBox->zmax = zmid;
     
-    boundingBoxes[4]->xmin = boundingBox->xmin;
-    boundingBoxes[4]->xmax = xmid;
-    boundingBoxes[4]->ymin = boundingBox->ymin;
-    boundingBoxes[4]->ymax = ymid;
-    boundingBoxes[4]->zmin = zmid;
-    boundingBoxes[4]->zmax = boundingBox->zmax;
+    mesh->head->children[4]->boundingBox->xmin = mesh->head->boundingBox->xmin;
+    mesh->head->children[4]->boundingBox->xmax = xmid;
+    mesh->head->children[4]->boundingBox->ymin = mesh->head->boundingBox->ymin;
+    mesh->head->children[4]->boundingBox->ymax = ymid;
+    mesh->head->children[4]->boundingBox->zmin = zmid;
+    mesh->head->children[4]->boundingBox->zmax = mesh->head->boundingBox->zmax;
 
-    boundingBoxes[5]->xmin = xmid;
-    boundingBoxes[5]->xmax = boundingBox->xmax;
-    boundingBoxes[5]->ymin = boundingBox->ymin;
-    boundingBoxes[5]->ymax = ymid;
-    boundingBoxes[5]->zmin = zmid;
-    boundingBoxes[5]->zmax = boundingBox->zmax;
+    mesh->head->children[5]->boundingBox->xmin = xmid;
+    mesh->head->children[5]->boundingBox->xmax = mesh->head->boundingBox->xmax;
+    mesh->head->children[5]->boundingBox->ymin = mesh->head->boundingBox->ymin;
+    mesh->head->children[5]->boundingBox->ymax = ymid;
+    mesh->head->children[5]->boundingBox->zmin = zmid;
+    mesh->head->children[5]->boundingBox->zmax = mesh->head->boundingBox->zmax;
 
-    boundingBoxes[6]->xmin = boundingBox->xmin;
-    boundingBoxes[6]->xmax = xmid;
-    boundingBoxes[6]->ymin = ymid;
-    boundingBoxes[6]->ymax = boundingBox->ymax;
-    boundingBoxes[6]->zmin = zmid;
-    boundingBoxes[6]->zmax = boundingBox->zmax;
+    mesh->head->children[6]->boundingBox->xmin = mesh->head->boundingBox->xmin;
+    mesh->head->children[6]->boundingBox->xmax = xmid;
+    mesh->head->children[6]->boundingBox->ymin = ymid;
+    mesh->head->children[6]->boundingBox->ymax = mesh->head->boundingBox->ymax;
+    mesh->head->children[6]->boundingBox->zmin = zmid;
+    mesh->head->children[6]->boundingBox->zmax = mesh->head->boundingBox->zmax;
 
-    boundingBoxes[7]->xmin = xmid;
-    boundingBoxes[7]->xmax = boundingBox->xmax;
-    boundingBoxes[7]->ymin = ymid;
-    boundingBoxes[7]->ymax = boundingBox->ymax;
-    boundingBoxes[7]->zmin = zmid;
-    boundingBoxes[7]->zmax = boundingBox->zmax;
+    mesh->head->children[7]->boundingBox->xmin = xmid;
+    mesh->head->children[7]->boundingBox->xmax = mesh->head->boundingBox->xmax;
+    mesh->head->children[7]->boundingBox->ymin = ymid;
+    mesh->head->children[7]->boundingBox->ymax = mesh->head->boundingBox->ymax;
+    mesh->head->children[7]->boundingBox->zmin = zmid;
+    mesh->head->children[7]->boundingBox->zmax = mesh->head->boundingBox->zmax;
+
+    return;
+}
+
+void partitionMeshBoundingBox(AABB b, AABB* result[8]) 
+{
+    for(int i = 0; i < 8; i++)
+    {
+        if(result[i])
+        {
+            fprintf(stderr, "nullptr\n");
+            return;
+        }
+    }
+
+    float xmid = (b->xmax + b->xmin) / 2;
+    float ymid = (b->ymax + b->ymin) / 2;
+    float zmid = (b->zmax + b->zmin) / 2;
+
+    result[1]->xmin = mesh->head->boundingBox->xmin;
+    result[0]->xmax = xmid;
+    result[0]->ymin = mesh->head->boundingBox->ymin;
+    result[0]->ymax = ymid;
+    result[0]->zmin = mesh->head->boundingBox->zmin;
+    result[0]->zmax = zmid;
+
+    result[1]->xmin = xmid;
+    result[1]->xmax = mesh->head->boundingBox->xmax;
+    result[1]->ymin = mesh->head->boundingBox->ymin;
+    result[1]->ymax = ymid;
+    result[1]->zmin = mesh->head->boundingBox->zmin;
+    result[1]->zmax = zmid;
+
+    result[2]->xmin = mesh->head->boundingBox->xmin;
+    result[2]->xmax = xmid;
+    result[2]->ymin = ymid;
+    result[2]->ymax = mesh->head->boundingBox->ymax;
+    result[2]->zmin = mesh->head->boundingBox->zmin;
+    result[2]->zmax = zmid;
+
+    result[3]->xmin = xmid;
+    result[3]->xmax = mesh->head->boundingBox->xmax;
+    result[3]->ymin = ymid;
+    result[3]->ymax = mesh->head->boundingBox->ymax;
+    result[3]->zmin = mesh->head->boundingBox->zmin;
+    result[3]->zmax = zmid;
+    
+    result[4]->xmin = mesh->head->boundingBox->xmin;
+    result[4]->xmax = xmid;
+    result[4]->ymin = mesh->head->boundingBox->ymin;
+    result[4]->ymax = ymid;
+    result[4]->zmin = zmid;
+    result[4]->zmax = mesh->head->boundingBox->zmax;
+
+    result[5]->xmin = xmid;
+    result[5]->xmax = mesh->head->boundingBox->xmax;
+    result[5]->ymin = mesh->head->boundingBox->ymin;
+    result[5]->ymax = ymid;
+    result[5]->zmin = zmid;
+    result[5]->zmax = mesh->head->boundingBox->zmax;
+
+    result[6]->xmin = mesh->head->boundingBox->xmin;
+    result[6]->xmax = xmid;
+    result[6]->ymin = ymid;
+    result[6]->ymax = mesh->head->boundingBox->ymax;
+    result[6]->zmin = zmid;
+    result[6]->zmax = mesh->head->boundingBox->zmax;
+
+    result[7]->xmin = xmid;
+    result[7]->xmax = mesh->head->boundingBox->xmax;
+    result[7]->ymin = ymid;
+    result[7]->ymax = mesh->head->boundingBox->ymax;
+    result[7]->zmin = zmid;
+    result[7]->zmax = mesh->head->boundingBox->zmax;
 
     return;
 }
@@ -327,7 +415,19 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
         }
     }
 
+    mesh->head = (OctreeNode*) malloc(sizeof(OctreeNode));
+    if(mesh->head == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory for octree\n");
+        return;
+    }
+
     generateBoundingBox(mesh);
+
+    // neefektivi asf
+    traverseOctree(mesh, &createOctree);
+    traverseOctree(mesh, &partitionBoundingBox);
+
     mesh->velocity = zerovector3i;
 
     return;
@@ -384,7 +484,18 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
         }
     }
 
+    mesh->head = (OctreeNode*) malloc(sizeof(OctreeNode));
+    if(mesh->head == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory for octree\n");
+        return;
+    }
+
     generateBoundingBox(mesh);
+
+    // neefektivi asf
+    traverseOctree(mesh, &createOctree);
+    traverseOctree(mesh, &partitionBoundingBox);
 
     mesh->velocity = zerovector3i;
 

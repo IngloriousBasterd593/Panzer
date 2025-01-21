@@ -94,7 +94,7 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
     return;
 }
 
-inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2) 
+int checkBoundingBoxCollision(AABB* b1, AABB* b2) 
 {
     if (b1->xmin > b2->xmax || b1->xmax < b2->xmin) return false;
     if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) return false;
@@ -105,31 +105,7 @@ inline int checkBoundingBoxCollision(BoundingBox* b1, BoundingBox* b2)
 
 int checkForMeshCollisionAndUpdateMeshParameters(Mesh** meshes, int numberOfMeshes) 
 {
-    for(int i = 0; i < numberOfMeshes; i++) 
-    {
-        for(int j = i + 1; j < numberOfMeshes; j++) 
-        {
-            if(checkMeshBoundingBoxCollision(meshes[i], meshes[j])) 
-            {
-                for(int bi = 0; bi < BOUNDINGBOXCOUNT; bi++) 
-                {
-                    for(int bj = 0; bj < BOUNDINGBOXCOUNT; bj++) 
-                    {
-                        if(checkBoundingBoxCollision(&meshes[i]->boundingBoxes[bi], &meshes[j]->boundingBoxes[bj])) 
-                        {
-                            
-                            
-                            // Collision detected - update parameters
-
-                            printf("Collision detected");
-                            
-                            return EXIT_SUCCESS;
-                        }
-                    }
-                }
-            }
-        }
-    }
+   
 
     return EXIT_SUCCESS;
 }
