@@ -40,10 +40,10 @@ float magnitude3fS(vec3f* v)
     return v->x * v->x + v->y * v->y + v->z * v->z;
 }
 
-float maxOfArrayF(float* array) 
+float maxOfArrayF(float* array, int lower, int upper) 
 {
-    float maxValue = array[0];
-    for(int i = 1; i < VERTICES; i++) 
+    float maxValue = array[lower];
+    for(int i = lower + 1; i < upper; i++) 
     {
         if(array[i] > maxValue) 
         {
@@ -53,10 +53,10 @@ float maxOfArrayF(float* array)
     return maxValue;
 }
 
-float minOfArrayF(float* array) 
+float minOfArrayF(float* array, int lower, int upper) 
 {
-    float minValue = array[0];
-    for(int i = 1; i < VERTICES; i++) 
+    float minValue = array[lower];
+    for(int i = lower + 1; i < upper; i++) 
     {
         if(array[i] < minValue) 
         {
@@ -94,16 +94,17 @@ float minOfTwoF(float num1, float num2)
     }
 }
 
-void generateBoundingBox(Mesh* mesh)
+AABB generateBoundingBox3D(int* x, int* y, int* z, int l, int u)
 {
-    mesh->AABB.xmax = maxOfArrayF(mesh->x);
-    mesh->AABB.ymax = minOfArrayF(mesh->x);
-    mesh->AABB.zmax = maxOfArrayF(mesh->y);
-    mesh->AABB.xmin = minOfArrayF(mesh->y);
-    mesh->AABB.ymin = maxOfArrayF(mesh->z);
-    mesh->AABB.zmin = minOfArrayF(mesh->z);
+    AABB AABB;
+    AABB.xmax = maxOfArrayF(x, l, u);
+    AABB.ymax = minOfArrayF(x, l, u);
+    AABB.zmax = maxOfArrayF(y, l, u);
+    AABB.xmin = minOfArrayF(y, l, u);
+    AABB.ymin = maxOfArrayF(z, l, u);
+    AABB.zmin = minOfArrayF(z, l, u);
 
-    return;
+    return AABB;
 }
 
 void orthographicProjectionMatrix(mat4f* result, Camera* camera) 
@@ -409,7 +410,7 @@ void partitionBoundingBox(AABB b, AABB* result[8])
 
 */
 
-void traverseBVH(TreeNode* node, void (*callback) (TreeNode*))
+void traverseBVH(TreeNode* node, void (*callback) (Mesh*))
 {
     if(node == NULL) 
     {
@@ -422,50 +423,87 @@ void traverseBVH(TreeNode* node, void (*callback) (TreeNode*))
     traverseBVH(node->children[1], callback);
 }
 
-void initializeBVHTree(TreeNode* head)
+void createBoundingBoxForNode(Mesh* mesh, TreeNode* node, int start, int end)
 {
-    head->boundingBox[0] = (AABB*) malloc(sizeof(AABB));
-    if(head->boundingBox[0] == NULL)
+    int mid = (start + end) / 2;
+
+    int l1 = start;
+    int u1 = mid;
+
+    int l2 = mid;
+    int u2 = end;
+
+    memcpy(node->children[0], generateBoundingBox3D(mesh->x, mesh->y, mesh->z, l1, u1), sizeof(AABB));
+    memcpy(node->children[1], generateBoundingBox3D(mesh->x, mesh->y, mesh->z, l2, u2), sizeof(AABB));
+
+    createBoundingBoxForNode(mesh, node->children[0], l1, u1);
+    createBoundingBoxForNode(mesh, node->children[1], l2, u2);
+
+    return;
+}
+
+void initializeBVHTree(TreeNode* head, int currentDepth)
+{
+    head->boundingBox = (AABB*) malloc(sizeof(AABB));
+    if (head->boundingBox[0] == NULL) 
     {
         fprintf(stderr, "Failed to allocate memory for bounding box\n");
         return;
     }
 
-    for(int i = 0; i < 2; i++)
+    if(currentDepth < BVH_DEPTH) 
     {
-        head->children[i] = (TreeNode*) malloc(sizeof(TreeNode));
-        if(head->children[i] == NULL)
+        for (int i = 0; i < 2; i++) 
         {
-            for(int j = 0; j < i; j++)
+            head->children[i] = (TreeNode*)malloc(sizeof(TreeNode));
+            if (!head->children[i]) 
             {
-                free(head->children[j]);
+                for (int j = 0; j < i; j++) 
+                {
+                    free(head->children[j]);
+                    head->children[j] = NULL;
+                }
+
+                fprintf(stderr, "Failed to allocate memory for child\n");
+                return;
             }
 
-            fprintf(stderr, "Failed to allocate memory for children\n");
-            return;
+            initializeBVHTree(head->children[i], currentDepth + 1);
         }
+    } 
+    else 
+    {
+        head->children[0] = NULL;
+        head->children[1] = NULL;
     }
 }
 
-void compareBVHAABBs(TreeNode* n1, TreeNode* n2)
+
+int compareBVHAABBs(TreeNode* n1, TreeNode* n2, int depth)
 {
     if(n1 == NULL || n2 == NULL || n1->boundingBox == NULL || n2->boundingBox == NULL) 
     {
-        return;
+        return false;
     }
 
     if(checkBoundingBoxCollision(n1->boundingBox, n2->boundingBox)) 
     {
+        if(depth == BVH_DEPTH) 
+        {
+            // collision detected
+            return true;
+        }
+
         for(int i = 0; i < 2; i++)
         {
             for(int j = 0; j < 2; j++)
             {
-                compareBVHAABBs(n1->children[i], n2->children[j]);
+                compareBVHAABBs(n1->children[i], n2->children[j], ++depth);
             }
         }
     }
 
-    return;
+    return false;
 }
 
 void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int offsetY, int offsetZ) 
@@ -519,19 +557,10 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
         }
     }
 
-    mesh->head = (OctreeNode*) malloc(sizeof(OctreeNode));
-    if(mesh->head == NULL)
-    {
-        fprintf(stderr, "Failed to allocate memory for octree\n");
-        return;
-    }
-
-    generateBoundingBox(mesh);
-
-    // neefektivi asf
-    traverseOctree(mesh, &createOctree);
-    traverseOctree(mesh, &partitionBoundingBox);
-
+    memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
+    initializeBVHTree(mesh->head, 0);
+    createBoundingBoxForNode(mesh, mesh->head, 0, VERTICES);
+    
     mesh->velocity = zerovector3i;
 
     return;

@@ -43,7 +43,7 @@
 #define BUFFLEN 1024                                // safety
 #define FAR 2                                     // far plane distance for perspective projection
 #define NEAR 1                                    // near plane distance for perspective projection
-#define TREEDEPTH 7                                // depth of the octree
+#define BVH_DEPTH 7                                // depth of the octree
 // structs
 
 typedef struct {
@@ -82,6 +82,13 @@ typedef struct {
 } vec2i;
 
 typedef struct {
+    vec3f p1;
+    vec3f p2;
+    vec3f p3;
+    vec3f normal;
+} triangle;
+
+typedef struct {
     float xmin;
     float ymin;
     float zmin;
@@ -118,6 +125,15 @@ typedef struct {
     float top;
     float bottom;
 } Camera;
+
+typedef struct {
+    Mesh** meshes;
+    int meshCount;
+    Camera* camera;
+    unsigned int* frameColors;
+    int drawPrecision;
+    char* shaderProgram
+} Scene;
 
 // create an octtree struct
 typedef struct {

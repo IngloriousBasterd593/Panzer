@@ -18,6 +18,73 @@
 
 
 
+int readSTL(const char* filename, triangle** outTriangles, uint32_t* outTriangleCount)
+{
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        fprintf(stderr, "Failed to open file: %s\n", filename);
+        return false;
+    }
+
+    char header[80];
+    if(fread(header, 1, 80, file) != 80) 
+    {
+        fprintf(stderr, "Failed to read STL header\n");
+        fclose(file);
+        return false;
+    }
+
+    // Read the number of triangles (4 bytes)
+    uint32_t triangleCount = 0;
+    if (fread(&triangleCount, sizeof(uint32_t), 1, file) != 1) 
+    {
+        fprintf(stderr, "Failed to read triangle count\n");
+        fclose(file);
+        return false;
+    }
+
+    triangle* triangles = (triangle*) malloc(triangleCount * sizeof(triangle));
+    if(!triangles) 
+    {
+        fprintf(stderr, "Failed to allocate memory for triangles\n");
+        fclose(file);
+        return false;
+    }
+
+    for(uint32_t i = 0; i < triangleCount; i++) 
+    {
+        if(fread(&triangles[i].normal, sizeof(vec3f), 1, file) != 1) 
+        {
+            fprintf(stderr, "Failed to read triangle normal\n");
+            free(triangles);
+            fclose(file);
+            return false;
+        }
+
+        if(fread(&triangles[i].p1, sizeof(vec3f), 1, file) != 1 ||
+           fread(&triangles[i].p2, sizeof(vec3f), 1, file) != 1 ||
+           fread(&triangles[i].p3, sizeof(vec3f), 1, file) != 1) 
+        {
+            fprintf(stderr, "Failed to read triangle vertices\n");
+            free(triangles);
+            fclose(file);
+            return false;
+        }
+
+        fseek(file, 2, SEEK_CUR);
+    }
+
+    fclose(file);
+
+    *outTriangles = triangles;
+    *outTriangleCount = triangleCount;
+
+    return true;
+}
+
+
+
+
 int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture, const char* name, int width, int height) 
 {
     if(SDL_Init(SDL_INIT_VIDEO) < 0) 
@@ -137,29 +204,80 @@ int get_space(Mesh* meshes)
     return 0;
 }
 
-int free_space(Mesh** meshes, int meshCount) 
+void free_space(Scene* sceneInstance) 
 {
-    for(int i = 0; i < meshCount; i++) 
+    for(int i = 0; i < sceneInstance->meshCount; i++) 
     {
-        free(meshes[i]->x);
-        free(meshes[i]->y);
-        free(meshes[i]->z);
-
-        free(meshes[i]->xProj);
-        free(meshes[i]->yProj);
-        free(meshes[i]->zProj);
-
-        free(meshes[i]->torusNormals);
-
-        free(meshes[i]->AABBs);
+        free(sceneInstance->meshes[i]->x);
+        free(sceneInstance->meshes[i]->y);
+        free(sceneInstance->meshes[i]->z);
+        free(sceneInstance->meshes[i]->xProj);
+        free(sceneInstance->meshes[i]->yProj);
+        free(sceneInstance->meshes[i]->zProj);
+        free(sceneInstance->meshes[i]->meshNormals);
+        free(sceneInstance->meshes[i]->AABBes);
+        free(sceneInstance->meshes[i]);
     }
 
-    return 0;
+    free(sceneInstance->meshes);
+    free(sceneInstance->shaderProgram);
+    free(sceneInstance->frameColors);
+    free(sceneInstance);
+
+    return;
 }
 
-void initializeScene(Mesh** meshes, )
+// scene constructor
+void initializeScene(Scene* sceneInstance)
 {
-    
+    sceneInstance = malloc(sizeof(Scene));
+    if(sceneInstance == NULL) 
+    {
+        fprintf(stderr, "couldn't get space for scene");
+        return;
+    }
+
+    sceneInstance->meshCount = 1;
+    sceneInstance->drawPrecision = 20;
+
+    sceneInstance->Mesh** meshes = malloc(sceneInstance->meshCount * sizeof(Mesh*));
+    if(sceneInstance->meshes == NULL) 
+    {
+        fprintf(stderr, "couldn't get space for meshes");
+    }
+
+    for(int i = 0; i < sceneInstance->meshCount; i++) 
+    {
+        sceneInstance->meshes[i] = malloc(sizeof(Mesh));
+        if(sceneInstance->meshes[i] == NULL) 
+        {
+            fprintf(stderr, "couldn't get space for mesh");
+            
+        }
+
+        if(get_space(sceneInstance->meshes[i]) == 1) 
+        {
+            
+        }
+    }
+
+    sceneInstance->shaderProgram = malloc(BUFFLEN * sizeof(char));
+    if(sceneInstance->shaderProgram == NULL) 
+    {
+        fprintf(stderr, "couldn't get space for shader program");
+        return 1;
+    }
+
+    vec3f lightPerspectiveVector = {0, 0, 1};
+    vec3f viewVector = {0, 0, 1};
+
+    sceneInstance->camera = { viewVector, PI / 3, viewVector, SCREENWIDTH / SCREENHEIGHT, 1, 100, 10, 20, 10, 20 };
+
+    sceneInstance->frameColors = malloc(SCREENSIZE * sizeof(unsigned int));
+    if(sceneInstance->frameColors == NULL) 
+    {
+        perror("bruh");
+    } 
 
 }
 

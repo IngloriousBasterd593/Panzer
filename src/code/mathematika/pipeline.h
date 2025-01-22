@@ -96,9 +96,18 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
 
 int checkBoundingBoxCollision(AABB* b1, AABB* b2) 
 {
-    if (b1->xmin > b2->xmax || b1->xmax < b2->xmin) return false;
-    if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) return false;
-    if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) return false;
+    if (b1->xmin > b2->xmax || b1->xmax < b2->xmin)
+    { 
+    return false;
+    }
+    if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) 
+    {
+    return false;
+    }
+    if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) 
+    {
+    return false;
+    }
     
     return true;
 }

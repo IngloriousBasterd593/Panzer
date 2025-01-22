@@ -1,73 +1,39 @@
+
+
+
 #include "code/mathematika/mathcore.h"
 #include "code/mathematika/pipeline.h"
 #include "code/utilities/shared.h"
 #include "code/utilities/glutilities.h"
 
 
-int main(int argc, char** argv) {
-
+int main(int argc, char** argv) 
+{
+    // SDL
     SDL_Window** window = NULL;
     SDL_Texture** texture = NULL;
     SDL_Renderer** renderer = NULL;
-
-
 
     if(SDL_init(&window, &renderer, &texture, "3D", SCREENWIDTH, SCREENHEIGHT) == 1) {
         goto quit;
     }
 
-
     clock_t start, end;
     double cpu_time_used;
 
-    char* shaderProgram = malloc(BUFFLEN * sizeof(char));
-    if(shaderProgram == NULL) {
-        fprintf(stderr, "couldn't get space for shader program");
-        return 1;
-    }
 
     start = clock();
 
-    int meshCount = 1;
+    Scene sceneInstance;
 
-    Mesh** meshes = malloc(meshCount * sizeof(Mesh*));
-    if(meshes == NULL) 
-    {
-        fprintf(stderr, "couldn't get space for meshes");
-        goto SDLquit;
-    }
+    initializeScene(&sceneInstance);
 
-    for(int i = 0; i < meshCount; i++) 
-    {
-        meshes[i] = malloc(sizeof(Mesh));
-        if(meshes[i] == NULL) 
-        {
-            fprintf(stderr, "couldn't get space for mesh");
-            goto free;
-        }
+    
 
-        if(get_space(meshes[i]) == 1) 
-        {
-            goto free;
-        }
-    }
+    
+    torus_init(sceneInstance->meshes[0], 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
 
-    vec3f lightPerspectiveVector = {0, 0, 1};
-    vec3f viewVector = {0, 0, 1};
-
-    Camera camera = { viewVector, PI / 3, viewVector, SCREENWIDTH / SCREENHEIGHT, 1, 100, 10, 20, 10, 20 };
-
-    unsigned int* frameColors = NULL;
-
-    frameColors = malloc(SCREENSIZE * sizeof(unsigned int));
-    if(frameColors == NULL) {
-        perror("bruh");
-        goto free;
-    }
-
-    torus_init(meshes[0], 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
-
-    Mesh_draw(meshes[0], &camera, frameColors, 0, 0, 20);
+    Mesh_draw(sceneInstance->meshes[0], sceneInstance->camera, sceneInstance->frameColors, 0, 0, 20);
     
     SDL_RenderPresent(renderer);
 
@@ -91,7 +57,6 @@ int main(int argc, char** argv) {
     float Rad = 0;
     int radius = 150;
     float theta = 0;
-    int drawPrecision = 20;
 
     int quit = 0;
     SDL_Event e;
@@ -110,25 +75,25 @@ int main(int argc, char** argv) {
 
         start = clock();
 
-        memset(frameColors, 0xFF, SCREENWIDTH * SCREENHEIGHT * sizeof(unsigned int));
+        memset(sceneInstance->frameColors, 0xFF, SCREENWIDTH * SCREENHEIGHT * sizeof(unsigned int));
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
 
         
 
-        SDL_UpdateTexture(texture, NULL, frameColors, SCREENWIDTH * sizeof(unsigned int));
+        SDL_UpdateTexture(texture, NULL, sceneInstance->frameColors, SCREENWIDTH * sizeof(unsigned int));
         SDL_RenderCopy(renderer, texture, NULL, NULL);
 
         SDL_RenderPresent(renderer);
 
 
        
-            Mesh_draw(meshes, &camera, frameColors, drawPrecision);
+            Mesh_draw(sceneInstance->meshes, sceneInstance->camera, sceneInstance->frameColors, sceneInstance->drawPrecision);
 
-            Mesh_rotate(meshes, deltaRad, 'x');
-            Mesh_rotate(meshes, deltaRad, 'y');
-            Mesh_rotate(meshes, deltaRad, 'z');
+            Mesh_rotate(sceneInstance->meshes, deltaRad, 'x');
+            Mesh_rotate(sceneInstance->meshes, deltaRad, 'y');
+            Mesh_rotate(sceneInstance->meshes, deltaRad, 'z');
         
   
 
@@ -163,20 +128,10 @@ int main(int argc, char** argv) {
         */  
     }
 
-    free:
+ 
+    free_space(sceneInstance);
 
-    free_space(meshes, 1);
-
-    free(frameColors);
-    free(shaderProgram);
-
-    SDLquit: 
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    quit:
+    
     
     return 0;
 }
