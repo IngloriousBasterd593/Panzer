@@ -94,19 +94,6 @@ float minOfTwoF(float num1, float num2)
     }
 }
 
-AABB generateBoundingBox3D(int* x, int* y, int* z, int l, int u)
-{
-    AABB AABB;
-    AABB.xmax = maxOfArrayF(x, l, u);
-    AABB.ymax = minOfArrayF(x, l, u);
-    AABB.zmax = maxOfArrayF(y, l, u);
-    AABB.xmin = minOfArrayF(y, l, u);
-    AABB.ymin = maxOfArrayF(z, l, u);
-    AABB.zmin = minOfArrayF(z, l, u);
-
-    return AABB;
-}
-
 void orthographicProjectionMatrix(mat4f* result, Camera* camera) 
 {
     memset(result->raw, 0, 64);
@@ -179,29 +166,46 @@ unsigned int UDFS(vec3f* v1, vec3f* v2)
     return (v2->x - v1->x) * (v2->x - v1->x) + (v2->y - v1->y) * (v2->y - v1->y) + (v2->z - v1->z) * (v2->z - v1->z);
 }
 
+AABB generateBoundingBox3D(int* x, int* y, int* z, int l, int u)
+{
+    AABB AABB;
+    AABB.xmax = maxOfArrayF(x, l, u);
+    AABB.ymax = minOfArrayF(x, l, u);
+    AABB.zmax = maxOfArrayF(y, l, u);
+    AABB.xmin = minOfArrayF(y, l, u);
+    AABB.ymin = maxOfArrayF(z, l, u);
+    AABB.zmin = minOfArrayF(z, l, u);
+
+    return AABB;
+}
+
 int checkBoundingBoxCollision(AABB* b1, AABB* b2) 
 {
     if (b1->xmin > b2->xmax || b1->xmax < b2->xmin)
-        return false;
+    { 
+    return false;
+    }
     if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) 
-        return false;
+    {
+    return false;
+    }
     if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) 
-        return false;
+    {
+    return false;
+    }
     
     return true;
 }
 
-/*
-void traverseOctree(Mesh* mesh, (void (*callback) (Mesh*))) 
+void traverseOctree(Mesh* mesh) 
 {
-    if(mesh->head == NULL) 
+    if(mesh->spatialPartitioningHead == NULL) 
     {
         return;
     }
 
     for(int i = 0; i < 8; i++) 
     {
-        callback(mesh);
         traverseOctree(head->children[i]);
     }
 }
@@ -324,17 +328,14 @@ void compareOctreeAABBs(OctreeNode* n1, OctreeNode* n2)
                 
             }
 
-            if(checkBoundingBoxCollision(n1->children[i]->boundingBox, n2->children[j]->boundingBox))
-            {
-                compareOctreeAABBs(n1->children[i], n2->children[j]);
-            }
+     
         }
     }
 
     return;
 }
 
-void partitionBoundingBox(AABB b, AABB* result[8]) 
+void partitionBoundingBox(AABB* b, AABB* result[8]) 
 {
     for(int i = 0; i < 8; i++)
     {
@@ -407,8 +408,6 @@ void partitionBoundingBox(AABB b, AABB* result[8])
 
     return;
 }
-
-*/
 
 void traverseBVH(TreeNode* node, void (*callback) (Mesh*))
 {
@@ -490,6 +489,7 @@ int compareBVHAABBs(TreeNode* n1, TreeNode* n2, int depth)
     {
         if(depth == BVH_DEPTH) 
         {
+
             // collision detected
             return true;
         }
@@ -505,6 +505,8 @@ int compareBVHAABBs(TreeNode* n1, TreeNode* n2, int depth)
 
     return false;
 }
+
+void partitionSimulationSapce
 
 void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int offsetY, int offsetZ) 
 {
@@ -565,5 +567,64 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
 
     return;
 } 
+
+void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ) 
+{
+    if(radius <= 10) 
+    {
+        fprintf(stderr, "write a correct radius, bozo\n");
+        return;
+    }
+
+    mesh->pos.x = offsetX;
+    mesh->pos.y = offsetY;
+    mesh->pos.z = offsetZ;
+    
+    int index, nextL, nextQ;
+    vec3f normalVector, partialDerivativeU, partialDerivativeV;
+    
+    for(int j = 0; j < PIXELS; j++) 
+    {
+        for(int k = 0; k < PIXELS; k++) 
+        {
+            index = j * PIXELS + k; 
+            mesh->x[index] = radius * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
+            mesh->y[index] = radius * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
+            mesh->z[index] = radius * cos(PIOVERPIXELS * j);
+        }
+    }
+
+    for(int j = 0; j < PIXELS; j++) 
+    {
+        for(int k = 0; k < PIXELS; k++) 
+        {
+            nextL = (k + 1) % PIXELS;
+            nextQ = (j + 1) % PIXELS;
+
+            index = j * PIXELS + k; 
+
+            partialDerivativeU.x = mesh->x[index] - mesh->x[index + nextL];
+            partialDerivativeU.y = mesh->y[index] - mesh->y[index + nextL];
+            partialDerivativeU.z = mesh->z[index] - mesh->z[index + nextL];
+
+            partialDerivativeV.x = mesh->x[index] - mesh->x[nextQ * PIXELS + k];
+            partialDerivativeV.y = mesh->y[index] - mesh->y[nextQ * PIXELS + k];
+            partialDerivativeV.z = mesh->z[index] - mesh->z[nextQ * PIXELS + k];
+            
+            normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
+
+            mesh->meshNormals[index] = unit3f(&normalVector);
+        }
+    }
+    
+    memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
+    initializeBVHTree(mesh->head, 0);
+    createBoundingBoxForNode(mesh, mesh->head, 0, VERTICES);
+
+    mesh->velocity = zerovector3i;
+
+    return;
+}
+
 
 #endif

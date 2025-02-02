@@ -31,6 +31,8 @@ int main(int argc, char** argv)
     
 
     
+
+    
     torus_init(sceneInstance->meshes[0], 100, 50, HALFWINWIDTH, HALFWINHEIGHT, 0);
 
     Mesh_draw(sceneInstance->meshes[0], sceneInstance->camera, sceneInstance->frameColors, 0, 0, 20);

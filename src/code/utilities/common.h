@@ -132,13 +132,17 @@ typedef struct {
     Camera* camera;
     unsigned int* frameColors;
     int drawPrecision;
-    char* shaderProgram
+    char* shaderProgram;
+    AABB simulationSpace;
+    OctreeNode* spatialPartitioningHead;
+    int comparisonDepth;
 } Scene;
 
 // create an octtree struct
 typedef struct {
     OctreeNode* children[8];
     AABB* boundingBox;
+    int meshIndex;
 } OctreeNode;
 
 typedef struct {
@@ -147,7 +151,6 @@ typedef struct {
 } TreeNode;
 
 const static vec3i zerovector3i = {0, 0, 0};
-const static AABB simulationSpace = {-2000, -2000, -1000, 2000, 2000, 1000};
 
 
 #endif

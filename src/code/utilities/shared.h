@@ -279,6 +279,9 @@ void initializeScene(Scene* sceneInstance)
         perror("bruh");
     } 
 
+    sceneinstance->simulationSpace = {-2000, -2000, -1000, 2000, 2000, 1000};
+
+    return;
 }
 
 void printVector3f(vec3f vector) 

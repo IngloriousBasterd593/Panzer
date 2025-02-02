@@ -94,40 +94,23 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
     return;
 }
 
-int checkBoundingBoxCollision(AABB* b1, AABB* b2) 
+void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance) 
 {
-    if (b1->xmin > b2->xmax || b1->xmax < b2->xmin)
-    { 
-    return false;
-    }
-    if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) 
-    {
-    return false;
-    }
-    if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) 
-    {
-    return false;
-    }
     
-    return true;
-}
-
-int checkForMeshCollisionAndUpdateMeshParameters(Mesh** meshes, int numberOfMeshes) 
-{
    
 
-    return EXIT_SUCCESS;
+    return;
 }
 
-void Mesh_draw(Mesh** meshes, int numberOfMeshes, Camera* camera, unsigned int* frameColors, int drawPrecision)
+void Mesh_draw(Scene* sceneInstance)
 {
-    checkForMeshCollisionAndUpdateMeshParameters(meshes, numberOfMeshes);
+    checkForMeshCollisionAndUpdateMeshParameters(sceneInstance->meshes, sceneInstance->numberOfMeshes);
     
-    for(int m = 0; m < numberOfMeshes; m++)
+    for(int m = 0; m < sceneInstance->numberOfMeshes; m++)
     {
-        meshes[m]->pos.x += meshes[m]->velocity.x;
-        meshes[m]->pos.y += meshes[m]->velocity.x;
-        meshes[m]->pos.z += meshes[m]->velocity.x;
+        sceneInstance->meshes[m]->pos.x += sceneInstance->meshes[m]->velocity.x;
+        sceneInstance->meshes[m]->pos.y += sceneInstance->meshes[m]->velocity.x;
+        sceneInstance->meshes[m]->pos.z += sceneInstance->meshes[m]->velocity.x;
 
         for(int q = 0; q < PIXELS; q++) 
         {
@@ -135,7 +118,7 @@ void Mesh_draw(Mesh** meshes, int numberOfMeshes, Camera* camera, unsigned int* 
             {
                 int index = q * PIXELS + l;
 
-                if(dotProduct3f(&camera->POV, &meshes[m]->meshNormals[index]) < 0) {
+                if(dotProduct3f(sceneInstance->camera->POV, sceneInstance->meshes[m]->meshNormals[index]) < 0) {
                     continue;
                 }
 
@@ -146,7 +129,7 @@ void Mesh_draw(Mesh** meshes, int numberOfMeshes, Camera* camera, unsigned int* 
                 int indexPlusPixels = nextQ  * PIXELS + l;
                 int indexPlusPixelsPlusOne = nextQ * PIXELS + nextL;
 
-                float grayscaleCoefficient = dotProduct3f(&meshes[m]->meshNormals[index], &camera->lightingDirectionVector);
+                float grayscaleCoefficient = dotProduct3f(sceneInstance->meshes[m]->meshNormals[index], sceneInstance->camera->lightingDirectionVector);
 
                 unsigned char grayscaleRGB = (unsigned char)(255 - (132 * (1 - grayscaleCoefficient)));
                 unsigned int color = (0xFF << 24) | (grayscaleRGB << 16) 
@@ -170,23 +153,23 @@ void Mesh_draw(Mesh** meshes, int numberOfMeshes, Camera* camera, unsigned int* 
 
                 // Otherwise, using “raw” coordinates mixed with yProj:
                 vec2f vertex1;
-                vertex1.x = meshes[m]->x[index];
-                vertex1.y = meshes[m]->yProj[index];
+                vertex1.x = sceneInstance->meshes[m]->x[index];
+                vertex1.y = sceneInstance->meshes[m]->yProj[index];
 
                 vec2f vertex2;
-                vertex2.x = meshes[m]->x[indexPlusOne];
-                vertex2.y = meshes[m]->y[indexPlusOne];
+                vertex2.x = sceneInstance->meshes[m]->x[indexPlusOne];
+                vertex2.y = sceneInstance->meshes[m]->y[indexPlusOne];
 
                 vec2f vertexUpper1;
-                vertexUpper1.x = meshes[m]->x[indexPlusPixels];
-                vertexUpper1.y = meshes[m]->y[indexPlusPixels];
+                vertexUpper1.x = sceneInstance->meshes[m]->x[indexPlusPixels];
+                vertexUpper1.y = sceneInstance->meshes[m]->y[indexPlusPixels];
 
                 vec2f vertexUpper2;
-                vertexUpper2.x = meshes[m]->x[indexPlusPixelsPlusOne];
-                vertexUpper2.y = meshes[m]->y[indexPlusPixelsPlusOne];  
+                vertexUpper2.x = sceneInstance->meshes[m]->x[indexPlusPixelsPlusOne];
+                vertexUpper2.y = sceneInstance->meshes[m]->y[indexPlusPixelsPlusOne];  
 
-                fillTriangle(meshes[m], frameColors, vertex1, vertex2, vertexUpper1, drawPrecision, color);
-                fillTriangle(meshes[m], frameColors, vertex2, vertexUpper1, vertexUpper2, drawPrecision, color);
+                fillTriangle(sceneInstance->meshes[m], sceneInstance->frameColors, vertex1, vertex2, vertexUpper1, sceneInstance->drawPrecision, color);
+                fillTriangle(sceneInstance->meshes[m], sceneInstance->frameColors, vertex2, vertexUpper1, vertexUpper2, sceneInstance->drawPrecision, color);
             }
         }
     }
@@ -196,15 +179,15 @@ void Mesh_draw(Mesh** meshes, int numberOfMeshes, Camera* camera, unsigned int* 
 
 
 
-void Mesh_rotate(Mesh** meshes, int numberOfMeshes, float rad, char axis)
+void Mesh_rotate(Scene* sceneinstance, float rad, char axis)
 {
     float cosRad = (float)cos(rad);
     float sinRad = (float)sin(rad);
 
-    for (int m = 0; m < numberOfMeshes; m++)
+    for (int m = 0; m < sceneInstance->meshCount; m++)
     {
         // For each mesh in the array
-        Mesh* currentMesh = meshes[m]; 
+        Mesh* currentMesh = sceneInstance->meshes[m]; 
         vec3f previousVector;
         int index;
 
