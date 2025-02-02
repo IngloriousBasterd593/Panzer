@@ -43,6 +43,7 @@ float magnitude3fS(vec3f* v)
 float maxOfArrayF(float* array, int lower, int upper) 
 {
     float maxValue = array[lower];
+
     for(int i = lower + 1; i < upper; i++) 
     {
         if(array[i] > maxValue) 
@@ -50,12 +51,14 @@ float maxOfArrayF(float* array, int lower, int upper)
             maxValue = array[i];
         }
     }
+
     return maxValue;
 }
 
 float minOfArrayF(float* array, int lower, int upper) 
 {
     float minValue = array[lower];
+
     for(int i = lower + 1; i < upper; i++) 
     {
         if(array[i] < minValue) 
@@ -63,6 +66,7 @@ float minOfArrayF(float* array, int lower, int upper)
             minValue = array[i];
         }
     }
+
     return minValue;
 }
 
@@ -92,6 +96,11 @@ float minOfTwoF(float num1, float num2)
     {
         return num1;
     }
+}
+
+unsigned int UDFS(vec3f* v1, vec3f* v2)
+{
+    return (v2->x - v1->x) * (v2->x - v1->x) + (v2->y - v1->y) * (v2->y - v1->y) + (v2->z - v1->z) * (v2->z - v1->z);
 }
 
 void orthographicProjectionMatrix(mat4f* result, Camera* camera) 
@@ -161,41 +170,23 @@ vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
     };
 }
 
-unsigned int UDFS(vec3f* v1, vec3f* v2)
-{
-    return (v2->x - v1->x) * (v2->x - v1->x) + (v2->y - v1->y) * (v2->y - v1->y) + (v2->z - v1->z) * (v2->z - v1->z);
-}
 
-AABB generateBoundingBox3D(int* x, int* y, int* z, int l, int u)
-{
-    AABB AABB;
-    AABB.xmax = maxOfArrayF(x, l, u);
-    AABB.ymax = minOfArrayF(x, l, u);
-    AABB.zmax = maxOfArrayF(y, l, u);
-    AABB.xmin = minOfArrayF(y, l, u);
-    AABB.ymin = maxOfArrayF(z, l, u);
-    AABB.zmin = minOfArrayF(z, l, u);
 
-    return AABB;
-}
 
-int checkBoundingBoxCollision(AABB* b1, AABB* b2) 
-{
-    if (b1->xmin > b2->xmax || b1->xmax < b2->xmin)
-    { 
-    return false;
-    }
-    if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) 
-    {
-    return false;
-    }
-    if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) 
-    {
-    return false;
-    }
-    
-    return true;
-}
+
+/*    
+*
+*
+*
+*
+*
+*   brow wtf
+*   not needed
+*
+*
+*
+*/
+
 
 void traverseOctree(Mesh* mesh) 
 {
@@ -210,27 +201,17 @@ void traverseOctree(Mesh* mesh)
     }
 }
 
-void createMeshOctree(Mesh* mesh)
+void traverseAndRotateBVH(TreeNode* node)
 {
-    for(int i = 0; i < 8; i++)
+    if(node == NULL) 
     {
-        head->children[i] = (OctreeNode*) malloc(sizeof(OctreeNode));
-        if(head->children[i] == NULL)
-        {
-            for(int j = 0; j < i; j++)
-            {
-                free(head->children[j]);
-            }
-
-            fprintf(stderr, "Failed to allocate memory for octree child\n");
-            return;
-        }
-
-        head->children[i]->children = NULL;
-        head->children[i]->boundingBox = NULL;
+        return;
     }
 
-    return;
+    
+
+    traverseBVH(node->children[0]);
+    traverseBVH(node->children[1]);
 }
 
 void partitionMeshBoundingBox(Mesh* mesh) 
@@ -317,111 +298,159 @@ void partitionMeshBoundingBox(Mesh* mesh)
     return;
 }
 
-void compareOctreeAABBs(OctreeNode* n1, OctreeNode* n2) 
+/*    
+*
+*
+*
+*
+*
+*   not needeed
+*
+*
+*
+*
+*/
+
+// generates bounding box from binary partitioned arrays for BVH inirialisation 
+AABB generateBoundingBoxFromPartitionedArray(int* x, int* y, int* z, int l, int u)
 {
-    for(int i = 0; i < 8; i++)
-    {
-        for(int j = 0; j < 8; j++)
-        {
-            if(n1->children[i] == NULL || n2->children[j] == NULL)
-            {
-                
-            }
+    AABB AABB;
 
-     
-        }
-    }
+    AABB.xmax = maxOfArrayF(x, l, u);
+    AABB.ymax = minOfArrayF(x, l, u);
+    AABB.zmax = maxOfArrayF(y, l, u);
+    AABB.xmin = minOfArrayF(y, l, u);
+    AABB.ymin = maxOfArrayF(z, l, u);
+    AABB.zmin = minOfArrayF(z, l, u);
 
-    return;
+    return AABB;
 }
 
-void partitionBoundingBox(AABB* b, AABB* result[8]) 
+// chech if two bounding boxes are colliding
+int checkBoundingBoxCollision(AABB* b1, AABB* b2) 
 {
-    for(int i = 0; i < 8; i++)
-    {
-        if(result[i])
-        {
-            fprintf(stderr, "nullptr\n");
-            return;
-        }
+    if (b1->xmin > b2->xmax || b1->xmax < b2->xmin)
+    { 
+    return false;
     }
-
-    float xmid = (b->xmax + b->xmin) / 2;
-    float ymid = (b->ymax + b->ymin) / 2;
-    float zmid = (b->zmax + b->zmin) / 2;
-
-    result[1]->xmin = mesh->head->boundingBox->xmin;
-    result[0]->xmax = xmid;
-    result[0]->ymin = mesh->head->boundingBox->ymin;
-    result[0]->ymax = ymid;
-    result[0]->zmin = mesh->head->boundingBox->zmin;
-    result[0]->zmax = zmid;
-
-    result[1]->xmin = xmid;
-    result[1]->xmax = mesh->head->boundingBox->xmax;
-    result[1]->ymin = mesh->head->boundingBox->ymin;
-    result[1]->ymax = ymid;
-    result[1]->zmin = mesh->head->boundingBox->zmin;
-    result[1]->zmax = zmid;
-
-    result[2]->xmin = mesh->head->boundingBox->xmin;
-    result[2]->xmax = xmid;
-    result[2]->ymin = ymid;
-    result[2]->ymax = mesh->head->boundingBox->ymax;
-    result[2]->zmin = mesh->head->boundingBox->zmin;
-    result[2]->zmax = zmid;
-
-    result[3]->xmin = xmid;
-    result[3]->xmax = mesh->head->boundingBox->xmax;
-    result[3]->ymin = ymid;
-    result[3]->ymax = mesh->head->boundingBox->ymax;
-    result[3]->zmin = mesh->head->boundingBox->zmin;
-    result[3]->zmax = zmid;
+    if (b1->ymin > b2->ymax || b1->ymax < b2->ymin) 
+    {
+    return false;
+    }
+    if (b1->zmin > b2->zmax || b1->zmax < b2->zmin) 
+    {
+    return false;
+    }
     
-    result[4]->xmin = mesh->head->boundingBox->xmin;
-    result[4]->xmax = xmid;
-    result[4]->ymin = mesh->head->boundingBox->ymin;
-    result[4]->ymax = ymid;
-    result[4]->zmin = zmid;
-    result[4]->zmax = mesh->head->boundingBox->zmax;
-
-    result[5]->xmin = xmid;
-    result[5]->xmax = mesh->head->boundingBox->xmax;
-    result[5]->ymin = mesh->head->boundingBox->ymin;
-    result[5]->ymax = ymid;
-    result[5]->zmin = zmid;
-    result[5]->zmax = mesh->head->boundingBox->zmax;
-
-    result[6]->xmin = mesh->head->boundingBox->xmin;
-    result[6]->xmax = xmid;
-    result[6]->ymin = ymid;
-    result[6]->ymax = mesh->head->boundingBox->ymax;
-    result[6]->zmin = zmid;
-    result[6]->zmax = mesh->head->boundingBox->zmax;
-
-    result[7]->xmin = xmid;
-    result[7]->xmax = mesh->head->boundingBox->xmax;
-    result[7]->ymin = ymid;
-    result[7]->ymax = mesh->head->boundingBox->ymax;
-    result[7]->zmin = zmid;
-    result[7]->zmax = mesh->head->boundingBox->zmax;
-
-    return;
+    return true;
 }
 
-void traverseBVH(TreeNode* node, void (*callback) (Mesh*))
+
+// generates and populates an octree with partitioned bounding boxes for broad phase collision detection
+void generateSimulationSpaceOctree(OctreeNode* node, int currentDepth, int maxDepth) 
 {
-    if(node == NULL) 
+    if(currentDepth == maxDepth) 
     {
         return;
     }
 
-    callback(node);
+    AABB partitionedBoundingBoxes[8];
 
-    traverseBVH(node->children[0], callback);
-    traverseBVH(node->children[1], callback);
+    float xmid = (node->boundingBox->xmax + node->boundingBox->xmin) / 2;
+    float ymid = (node->boundingBox->ymax + node->boundingBox->ymin) / 2;
+    float zmid = (node->boundingBox->zmax + node->boundingBox->zmin) / 2;
+
+    partitionedBoundingBoxes[0]->xmin = node->boundingBox->xmin;
+    partitionedBoundingBoxes[0]->xmax = xmid;
+    partitionedBoundingBoxes[0]->ymin = node->boundingBox->ymin;
+    partitionedBoundingBoxes[0]->ymax = ymid;
+    partitionedBoundingBoxes[0]->zmin = node->boundingBox->zmin;
+    partitionedBoundingBoxes[0]->zmax = zmid;
+
+    partitionedBoundingBoxes[1]->xmin = xmid;
+    partitionedBoundingBoxes[1]->xmax = node->boundingBox->xmax;
+    partitionedBoundingBoxes[1]->ymin = node->boundingBox->ymin;
+    partitionedBoundingBoxes[1]->ymax = ymid;
+    partitionedBoundingBoxes[1]->zmin = node->boundingBox->zmin;
+    partitionedBoundingBoxes[1]->zmax = zmid;
+
+    partitionedBoundingBoxes[2]->xmin = node->boundingBox->xmin;
+    partitionedBoundingBoxes[2]->xmax = xmid;
+    partitionedBoundingBoxes[2]->ymin = ymid;
+    partitionedBoundingBoxes[2]->ymax = node->boundingBox->ymax;
+    partitionedBoundingBoxes[2]->zmin = node->boundingBox->zmin;
+    partitionedBoundingBoxes[2]->zmax = zmid;
+
+    partitionedBoundingBoxes[3]->xmin = xmid;
+    partitionedBoundingBoxes[3]->xmax = node->boundingBox->xmax;
+    partitionedBoundingBoxes[3]->ymin = ymid;
+    partitionedBoundingBoxes[3]->ymax = node->boundingBox->ymax;
+    partitionedBoundingBoxes[3]->zmin = node->boundingBox->zmin;
+    partitionedBoundingBoxes[3]->zmax = zmid;
+        
+    partitionedBoundingBoxes[4]->xmin = node->boundingBox->xmin;
+    partitionedBoundingBoxes[4]->xmax = xmid;
+    partitionedBoundingBoxes[4]->ymin = node->boundingBox->ymin;
+    partitionedBoundingBoxes[4]->ymax = ymid;
+    partitionedBoundingBoxes[4]->zmin = zmid;
+    partitionedBoundingBoxes[4]->zmax = node->boundingBox->zmax;
+
+    partitionedBoundingBoxes[5]->xmin = xmid;
+    partitionedBoundingBoxes[5]->xmax = node->boundingBox->xmax;
+    partitionedBoundingBoxes[5]->ymin = node->boundingBox->ymin;
+    partitionedBoundingBoxes[5]->ymax = ymid;
+    partitionedBoundingBoxes[5]->zmin = zmid;
+    partitionedBoundingBoxes[5]->zmax = node->boundingBox->zmax;
+
+    partitionedBoundingBoxes[6]->xmin = node->boundingBox->xmin;
+    partitionedBoundingBoxes[6]->xmax = xmid;
+    partitionedBoundingBoxes[6]->ymin = ymid;
+    partitionedBoundingBoxes[6]->ymax = node->boundingBox->ymax;
+    partitionedBoundingBoxes[6]->zmin = zmid;
+    partitionedBoundingBoxes[6]->zmax = node->boundingBox->zmax;
+
+    partitionedBoundingBoxes[7]->xmin = xmid;
+    partitionedBoundingBoxes[7]->xmax = node->boundingBox->xmax;
+    partitionedBoundingBoxes[7]->ymin = ymid;
+    partitionedBoundingBoxes[7]->ymax = node->boundingBox->ymax;
+    partitionedBoundingBoxes[7]->zmin = zmid;
+    partitionedBoundingBoxes[7]->zmax = node->boundingBox->zmax;
+
+    for(int i = 0; i < 8; i++) 
+    {
+        node->children[i] = (OctreeNode*) malloc(sizeof(OctreeNode));
+        if(node->children[i] == NULL) 
+        {
+            for(int j = 0; j < i; j++) 
+            {
+                free(node->children[j]);
+            }
+
+            fprintf(stderr, "Failed to allocate memory for children\n");
+            return;
+        }
+
+        node->children[i]->boundingBox = (AABB*) malloc(sizeof(AABB));
+        if(node->boundingBox == NULL) 
+        {
+            fprintf(stderr, "Failed to allocate memory for bounding box\n");
+            return;
+        }
+
+        memcpy(node->children[i]->boundingBox, &partitionedBoundingBoxes[i], sizeof(AABB));
+    }
+
+    for(int i = 0; i < 8; i++) 
+    {
+        generateSimulationSpaceOctree(node->children[i], ++currentDepth, maxDepth);
+    }
+
+    return;
 }
 
+// traverses a mesh BVH tree and generates bounding boxes for each node with partitioned arrays
+// non trivial to implement box generation and initialisation in a single function
+// therefore this function is a helper function called after initializeBVHTree
 void createBoundingBoxForNode(Mesh* mesh, TreeNode* node, int start, int end)
 {
     int mid = (start + end) / 2;
@@ -441,6 +470,7 @@ void createBoundingBoxForNode(Mesh* mesh, TreeNode* node, int start, int end)
     return;
 }
 
+// initializes a BVH tree for mesh
 void initializeBVHTree(TreeNode* head, int currentDepth)
 {
     head->boundingBox = (AABB*) malloc(sizeof(AABB));
@@ -454,7 +484,7 @@ void initializeBVHTree(TreeNode* head, int currentDepth)
     {
         for (int i = 0; i < 2; i++) 
         {
-            head->children[i] = (TreeNode*)malloc(sizeof(TreeNode));
+            head->children[i] = (TreeNode*) malloc(sizeof(TreeNode));
             if (!head->children[i]) 
             {
                 for (int j = 0; j < i; j++) 
@@ -477,7 +507,7 @@ void initializeBVHTree(TreeNode* head, int currentDepth)
     }
 }
 
-
+// compares two BVH AABBs for collision detection
 int compareBVHAABBs(TreeNode* n1, TreeNode* n2, int depth)
 {
     if(n1 == NULL || n2 == NULL || n1->boundingBox == NULL || n2->boundingBox == NULL) 
@@ -506,7 +536,51 @@ int compareBVHAABBs(TreeNode* n1, TreeNode* n2, int depth)
     return false;
 }
 
-void partitionSimulationSapce
+// helper function to partition the scene simulation space into an octree for broad phase collision detection
+void partitionSceneSimulationSpace(Scene* sceneInstance) 
+{
+    vec3f min = {sceneInstance->simulationSpace.xmin, sceneInstance->simulationSpace.ymin, sceneInstance->simulationSpace.zmin};
+    vec3f max = {sceneInstance->simulationSpace.xmax, sceneInstance->simulationSpace.ymax, sceneInstance->simulationSpace.zmax};
+
+    int SPATIALPARTITIONINGDEPTH = (int) (log2f((3 * sqrt(UDFS(&min, &max))) / (MAXMESHDISTANCE))); 
+
+    sceneInstance->spatialPartitioningHead = (OctreeNode*) malloc(sizeof(OctreeNode));
+    if(sceneInstance->spatialPartitioningHead == NULL) 
+    {
+        fprintf(stderr, "couldn't get space for octree");
+        return;
+    }
+
+    sceneInstance->spatialPartitioningHead->boundingBox = (AABB*) malloc(sizeof(AABB));
+    if(sceneInstance->spatialPartitioningHead->boundingBox == NULL) 
+    {
+        fprintf(stderr, "couldn't get space for bounding box");
+        return;
+    }
+
+    memcpy(sceneInstance->spatialPartitioningHead->boundingBox, &sceneInstance->simulationSpace, sizeof(AABB));
+    generateSimulationSpaceOctree(sceneInstance->spatialPartitioningHead, 0, SPATIALPARTITIONINGDEPTH);
+
+    return;
+}
+
+/*    
+*
+*
+*
+*
+*
+*   end
+*
+*
+*
+*
+*/
+
+
+
+
+
 
 void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int offsetY, int offsetZ) 
 {

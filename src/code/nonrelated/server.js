@@ -1,6 +1,0 @@
-function fetchUserData(id) {
-
-
-
-
-}

@@ -1,11 +1,17 @@
-
-
-
-#include "code/mathematika/mathcore.h"
-#include "code/mathematika/pipeline.h"
+#include "code/math/mathlib.h"
+#include "code/math/pipeline.h"
 #include "code/utilities/shared.h"
 #include "code/utilities/glutilities.h"
 
+
+/*      TODO: free tree memory
+*       react to collisions in checkBVHAABBs() function
+*       implement broad phase collision detection in checkForMeshCollisionAndUpdateMeshParameters() function and put all collision detection together
+*       rotate BVH trees in rotateMeshes() function
+*
+*
+*
+*/
 
 int main(int argc, char** argv) 
 {
@@ -26,7 +32,7 @@ int main(int argc, char** argv)
 
     Scene sceneInstance;
 
-    initializeScene(&sceneInstance);
+    initializeScene(&sceneInstance, 1, 1, (AABB) {5000, 5000, 5000, -5000, -5000, -5000});
 
     
 

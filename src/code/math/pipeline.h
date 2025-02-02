@@ -96,6 +96,7 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
 
 void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance) 
 {
+
     
    
 
@@ -178,100 +179,72 @@ void Mesh_draw(Scene* sceneInstance)
 }
 
 
-
-void Mesh_rotate(Scene* sceneinstance, float rad, char axis)
+void Mesh_rotate(Mesh* mesh, float rad, vec3f axis)
 {
-    float cosRad = (float)cos(rad);
-    float sinRad = (float)sin(rad);
+    float axisLen = sqrt(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
 
-    for (int m = 0; m < sceneInstance->meshCount; m++)
-    {
-        // For each mesh in the array
-        Mesh* currentMesh = sceneInstance->meshes[m]; 
-        vec3f previousVector;
-        int index;
+    axis.x /= axisLen;
+    axis.y /= axisLen;
+    axis.z /= axisLen;
+    
+    float cosRad = cos(rad);
+    float sinRad = sin(rad);
+    float oneMinusCos = 1.0f - cosRad;
 
-        switch (axis) 
+        for (int j = 0; j < PIXELS; j++)
         {
-            case 'x':
+            for (int k = 0; k < PIXELS; k++)
             {
-                for (int j = 0; j < PIXELS; j++) 
-                {
-                    for (int k = 0; k < PIXELS; k++) 
-                    {
-                        index = j * PIXELS + k;
+                int index = j * PIXELS + k;
+  
+                float vx = mesh->x[index];
+                float vy = mesh->y[index];
+                float vz = mesh->z[index];
+                
+                float crossX = axis.y * vz - axis.z * vy;
+                float crossY = axis.z * vx - axis.x * vz;
+                float crossZ = axis.x * vy - axis.y * vx;
+                
+                float dot = axis.x * vx + axis.y * vy + axis.z * vz;
+                
+                float newVx = vx * cosRad + crossX * sinRad + axis.x * dot * oneMinusCos;
+                float newVy = vy * cosRad + crossY * sinRad + axis.y * dot * oneMinusCos;
+                float newVz = vz * cosRad + crossZ * sinRad + axis.z * dot * oneMinusCos;
+                
+                mesh->x[index] = newVx;
+                mesh->y[index] = newVy;
+                mesh->z[index] = newVz;
 
-                        // Rotate vertex
-                        previousVector.x = currentMesh->x[index];
-                        previousVector.y = currentMesh->y[index];
-                        previousVector.z = currentMesh->z[index];
 
-                        currentMesh->y[index] = previousVector.y * cosRad - previousVector.z * sinRad;
-                        currentMesh->z[index] = previousVector.y * sinRad + previousVector.z * cosRad;
 
-                        // Rotate normal
-                        previousVector = currentMesh->meshNormals[index];
-                        currentMesh->meshNormals[index].y = previousVector.y * cosRad - previousVector.z * sinRad;
-                        currentMesh->meshNormals[index].z = previousVector.y * sinRad + previousVector.z * cosRad;
-                    }
-                }
-                break;
+                
+                vec3f n = mesh->meshNormals[index];
+
+                float nx = n.x;
+                float ny = n.y;
+                float nz = n.z;
+                
+                float crossNX = axis.y * nz - axis.z * ny;
+                float crossNY = axis.z * nx - axis.x * nz;
+                float crossNZ = axis.x * ny - axis.y * nx;
+                
+                float dotN = axis.x * nx + axis.y * ny + axis.z * nz;
+                
+                vec3f n_rot;
+
+                n_rot.x = nx * cosRad + crossNX * sinRad + axis.x * dotN * oneMinusCos;
+                n_rot.y = ny * cosRad + crossNY * sinRad + axis.y * dotN * oneMinusCos;
+                n_rot.z = nz * cosRad + crossNZ * sinRad + axis.z * dotN * oneMinusCos;
+                
+                mesh->meshNormals[index] = n_rot;
+
+
+
+
+                traverseBVH(mesh->head, );
             }
-            case 'y':
-            {
-                for (int j = 0; j < PIXELS; j++) 
-                {
-                    for (int k = 0; k < PIXELS; k++) 
-                    {
-                        index = j * PIXELS + k;
-
-                        // Rotate vertex
-                        previousVector.x = currentMesh->x[index];
-                        previousVector.y = currentMesh->y[index];
-                        previousVector.z = currentMesh->z[index];
-
-                        currentMesh->x[index] = previousVector.x * cosRad + previousVector.z * sinRad;
-                        currentMesh->z[index] = -previousVector.x * sinRad + previousVector.z * cosRad;
-
-                        // Rotate normal
-                        previousVector = currentMesh->meshNormals[index];
-                        currentMesh->meshNormals[index].x = previousVector.x * cosRad + previousVector.z * sinRad;
-                        currentMesh->meshNormals[index].z = -previousVector.x * sinRad + previousVector.z * cosRad;
-                    }
-                }
-                break;
-            }
-            case 'z':
-            {
-                for (int j = 0; j < PIXELS; j++) 
-                {
-                    for (int k = 0; k < PIXELS; k++) 
-                    {
-                        index = j * PIXELS + k;
-
-                        // Rotate vertex
-                        previousVector.x = currentMesh->x[index];
-                        previousVector.y = currentMesh->y[index];
-                        previousVector.z = currentMesh->z[index];
-
-                        currentMesh->x[index] = previousVector.x * cosRad - previousVector.y * sinRad;
-                        currentMesh->y[index] = previousVector.x * sinRad + previousVector.y * cosRad;
-
-                        // Rotate normal
-                        previousVector = currentMesh->meshNormals[index];
-                        currentMesh->meshNormals[index].x = previousVector.x * cosRad - previousVector.y * sinRad;  
-                        currentMesh->meshNormals[index].y = previousVector.x * sinRad + previousVector.y * cosRad;
-                    }
-                }
-                break;
-            }
-            default:
-                // Do nothing if the axis is not x, y, or z
-                break;
         }
     }
-}
-
 
 
 #endif

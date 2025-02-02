@@ -3,10 +3,17 @@
 
 /*
 *
-*       This is supposed to be a 3d physics simulation.
-*       The implementation is inherently bloated and cant be fixed, at this point it's easier to rewrite the entire thing than to fix the existing codebase
-*       Do not use any of these functions for any purpose, as they lack proper error handling (designed to make them faster) and are non refactorable, 
-*       lacking proper documentation and inhereting implementation issues from the person who wrote them.
+*        common.h    -   common header file for the project
+*        shared.h    -   shared header file for the project
+*        mathlib.h   -   math library header file for the project
+*        pipeline.h  -   pipeline header file for the project
+*        glutilities.h   -   graphics library utilities header file for the project
+*        main.c      -   main file for the project
+*        Makefile    -   makefile for the project
+*
+*       
+*       
+*       
 *       
 */
 
@@ -25,7 +32,7 @@
 
 // macros
 
-#define PIXELS 100                                  // loop counter for 3 dimensional shape access    
+#define PIXELS 100                                  // loop counter for 3 dimensional shape access involving two parameters   
 #define VERTICES (PIXELS * PIXELS)                  // number of vertices for each object
 #define AABBSTEP 25             
 #define AABBCOUNT (VERTICES / AABBSTEP)             
@@ -39,12 +46,13 @@
 #define SCREENSIZE (SCREENWIDTH * SCREENHEIGHT)
 #define HALFWINWIDTH (SCREENWIDTH / 2)
 #define HALFWINHEIGHT (SCREENHEIGHT / 2)
-#define MAXLOOPLEN 4096                             // lmao
-#define BUFFLEN 1024                                // safety
-#define FAR 2                                     // far plane distance for perspective projection
-#define NEAR 1                                    // near plane distance for perspective projection
-#define BVH_DEPTH 7                                // depth of the octree
-// structs
+#define MAXLOOPLEN 4096                             
+#define BUFFLEN 1024                                
+#define FAR 2                                       // far plane distance for perspective projection
+#define NEAR 1                                      // near plane distance for perspective projection
+#define BVH_DEPTH 7                                 // depth of the BVH tree      
+#define MAXMESHDISTANCE 400                         // maximum anticipated distance between two points on the mesh for spatial partitioning          
+
 
 typedef struct {
     float x;
@@ -89,6 +97,7 @@ typedef struct {
 } triangle;
 
 typedef struct {
+
     float xmin;
     float ymin;
     float zmin;
@@ -138,7 +147,6 @@ typedef struct {
     int comparisonDepth;
 } Scene;
 
-// create an octtree struct
 typedef struct {
     OctreeNode* children[8];
     AABB* boundingBox;

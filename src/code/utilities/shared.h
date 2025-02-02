@@ -228,7 +228,7 @@ void free_space(Scene* sceneInstance)
 }
 
 // scene constructor
-void initializeScene(Scene* sceneInstance)
+void initializeScene(Scene* sceneInstance, int meshCount, int drawPrecision, AABB simulationSpace)
 {
     sceneInstance = malloc(sizeof(Scene));
     if(sceneInstance == NULL) 
@@ -237,8 +237,8 @@ void initializeScene(Scene* sceneInstance)
         return;
     }
 
-    sceneInstance->meshCount = 1;
-    sceneInstance->drawPrecision = 20;
+    sceneInstance->meshCount = meshCount;
+    sceneInstance->drawPrecision = drawPrecision;
 
     sceneInstance->Mesh** meshes = malloc(sceneInstance->meshCount * sizeof(Mesh*));
     if(sceneInstance->meshes == NULL) 
@@ -279,7 +279,8 @@ void initializeScene(Scene* sceneInstance)
         perror("bruh");
     } 
 
-    sceneinstance->simulationSpace = {-2000, -2000, -1000, 2000, 2000, 1000};
+    memcpy(sceneInstance->simulationSpace, &simulationSpace, sizeof(AABB));
+    partitionSceneSimulationSpace(sceneInstance);
 
     return;
 }
