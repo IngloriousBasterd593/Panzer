@@ -4,11 +4,12 @@
 #include "code/utilities/glutilities.h"
 
 
-/*      TODO: free tree memory
+/*      TODO:
 *       react to collisions in checkBVHAABBs() function
-*       implement broad phase collision detection in checkForMeshCollisionAndUpdateMeshParameters() function and put all collision detection together
-*       rotate BVH trees in rotateMeshes() function
-*
+*       implement broad phase collision detection in checkForMeshCollisionAndUpdateMeshParameters() ]
+*       function and put all collision detection together
+*      
+*       implement rigid body physcis
 *
 *
 */
@@ -97,11 +98,7 @@ int main(int argc, char** argv)
 
 
        
-            Mesh_draw(sceneInstance->meshes, sceneInstance->camera, sceneInstance->frameColors, sceneInstance->drawPrecision);
-
-            Mesh_rotate(sceneInstance->meshes, deltaRad, 'x');
-            Mesh_rotate(sceneInstance->meshes, deltaRad, 'y');
-            Mesh_rotate(sceneInstance->meshes, deltaRad, 'z');
+           
         
   
 

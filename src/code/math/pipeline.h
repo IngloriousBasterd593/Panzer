@@ -96,6 +96,10 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
 
 void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance) 
 {
+    for(int i = 0; i < sceneInstance->meshCount; i++)
+    {
+        
+    }
 
     
    
@@ -105,7 +109,7 @@ void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance)
 
 void Mesh_draw(Scene* sceneInstance)
 {
-    checkForMeshCollisionAndUpdateMeshParameters(sceneInstance->meshes, sceneInstance->numberOfMeshes);
+    checkForMeshCollisionAndUpdateMeshParameters(sceneInstance);
     
     for(int m = 0; m < sceneInstance->numberOfMeshes; m++)
     {
@@ -179,72 +183,57 @@ void Mesh_draw(Scene* sceneInstance)
 }
 
 
-void Mesh_rotate(Mesh* mesh, float rad, vec3f axis)
+void Mesh_rotate(Mesh* mesh, vec3f angularVelocity)
 {
-    float axisLen = sqrt(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+    float cosineX = cos(angularVelocity.x);
+    float sineX = sin(angularVelocity.x);
 
-    axis.x /= axisLen;
-    axis.y /= axisLen;
-    axis.z /= axisLen;
-    
-    float cosRad = cos(rad);
-    float sinRad = sin(rad);
-    float oneMinusCos = 1.0f - cosRad;
+    float cosineY = cos(angularVelocity.y);
+    float sineY = sin(angularVelocity.y);
 
-        for (int j = 0; j < PIXELS; j++)
-        {
-            for (int k = 0; k < PIXELS; k++)
-            {
-                int index = j * PIXELS + k;
-  
-                float vx = mesh->x[index];
-                float vy = mesh->y[index];
-                float vz = mesh->z[index];
-                
-                float crossX = axis.y * vz - axis.z * vy;
-                float crossY = axis.z * vx - axis.x * vz;
-                float crossZ = axis.x * vy - axis.y * vx;
-                
-                float dot = axis.x * vx + axis.y * vy + axis.z * vz;
-                
-                float newVx = vx * cosRad + crossX * sinRad + axis.x * dot * oneMinusCos;
-                float newVy = vy * cosRad + crossY * sinRad + axis.y * dot * oneMinusCos;
-                float newVz = vz * cosRad + crossZ * sinRad + axis.z * dot * oneMinusCos;
-                
-                mesh->x[index] = newVx;
-                mesh->y[index] = newVy;
-                mesh->z[index] = newVz;
+    float cosineZ = cos(angularVelocity.z);
+    float sineZ = sin(angularVelocity.z);
 
+    mat3f rotationMatrix;
 
+    rotationMatrix.m[0][0] = cosineY * cosineZ;
+    rotationMatrix.m[0][1] = -cosineY * sineZ;
+    rotationMatrix.m[0][2] = sineY;
 
-                
-                vec3f n = mesh->meshNormals[index];
+    rotationMatrix.m[1][0] = sineX * sineY * cosineZ + cosineX * sineZ;
+    rotationMatrix.m[1][1] = -sineX * sineY * sineZ + cosineX * cosineZ;
+    rotationMatrix.m[1][2] = -sineX * cosineY;
 
-                float nx = n.x;
-                float ny = n.y;
-                float nz = n.z;
-                
-                float crossNX = axis.y * nz - axis.z * ny;
-                float crossNY = axis.z * nx - axis.x * nz;
-                float crossNZ = axis.x * ny - axis.y * nx;
-                
-                float dotN = axis.x * nx + axis.y * ny + axis.z * nz;
-                
-                vec3f n_rot;
+    rotationMatrix.m[2][0] = -cosineX * sineY * cosineZ + sineX * sineZ;
+    rotationMatrix.m[2][1] = cosineX * sineY * sineZ + sineX * cosineZ;
+    rotationMatrix.m[2][2] = cosineX * cosineY;
 
-                n_rot.x = nx * cosRad + crossNX * sinRad + axis.x * dotN * oneMinusCos;
-                n_rot.y = ny * cosRad + crossNY * sinRad + axis.y * dotN * oneMinusCos;
-                n_rot.z = nz * cosRad + crossNZ * sinRad + axis.z * dotN * oneMinusCos;
-                
-                mesh->meshNormals[index] = n_rot;
+    for(int i = 0; i < VERTICES; i++) 
+    {
+        vec3f vertex;
+        vertex.x = mesh->x[i];
+        vertex.y = mesh->y[i];
+        vertex.z = mesh->z[i];
 
+        multiplyVectorByMatrix3f(&rotationMatrix, &vertex);
 
+        mesh->x[i] = vertex.x;
+        mesh->y[i] = vertex.y;
+        mesh->z[i] = vertex.z;
 
+        vec3f normal;
 
-                traverseBVH(mesh->head, );
-            }
-        }
+        normal.x = mesh->meshNormals[i].x;
+        normal.y = mesh->meshNormals[i].y;
+        normal.z = mesh->meshNormals[i].z;
+
+        multiplyVectorByMatrix3f(&rotationMatrix, &normal);
+
+        mesh->meshNormals[i] = normal;
+
+        traverseBinaryTreeRoateAABBs(mesh->head, &rotationMatrix);
     }
+}
 
 
 #endif

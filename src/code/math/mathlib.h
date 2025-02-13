@@ -131,7 +131,7 @@ void perspectiveProjectionMatrix(mat4f* result, Camera* camera)
     return;
 }
 
-void multiplyVectorByMatrix(mat4f* matrix, vec4f* vertex) 
+void multiplyVectorByMatrix4f(mat4f* matrix, vec4f* vertex) 
 {
     float x = vertex->x;
     float y = vertex->y;
@@ -146,7 +146,20 @@ void multiplyVectorByMatrix(mat4f* matrix, vec4f* vertex)
     return;
 }
 
-void multiplyMatrixByMatrix(mat4f* m1, mat4f* m2, mat4f* resultMatrix)
+void multiplyVectorByMatrix3f(mat3f* matrix, vec3f* vertex) 
+{
+    float x = vertex->x;
+    float y = vertex->y;
+    float z = vertex->z;
+
+    vertex->x = matrix->column[0].x * x + matrix->column[1].x * y + matrix->column[2].x * z + matrix->column[3].x * w;
+    vertex->y = matrix->column[0].y * x + matrix->column[1].y * y + matrix->column[2].y * z + matrix->column[3].y * w;
+    vertex->z = matrix->column[0].z * x + matrix->column[1].z * y + matrix->column[2].z * z + matrix->column[3].z * w;
+
+    return;
+}
+
+void multiplyMatrixByMatrix4f(mat4f* m1, mat4f* m2, mat4f* resultMatrix)
 {
     for (int i = 0; i < 4; i++) 
     {
@@ -563,6 +576,41 @@ void partitionSceneSimulationSpace(Scene* sceneInstance)
 
     return;
 }
+
+
+void traverseBinaryTreeRoateAABBs(TreeNode* node, mat3f* rotationMatrix)
+{
+    if(!node)
+    {
+        return;
+    }
+
+    vec3f corners[6] =
+    {
+        {node->boundingBox->xmin, node->boundingBox->ymin, node->boundingBox->zmin},
+        {node->boundingBox->xmax, node->boundingBox->ymin, node->boundingBox->zmin},
+        {node->boundingBox->xmin, node->boundingBox->ymax, node->boundingBox->zmin},
+        {node->boundingBox->xmax, node->boundingBox->ymax, node->boundingBox->zmin},
+        {node->boundingBox->xmin, node->boundingBox->ymin, node->boundingBox->zmax},
+        {node->boundingBox->xmax, node->boundingBox->ymax, node->boundingBox->zmax}
+    };
+
+    for(int i = 0; i < 6; i++)
+    {
+        vec3f corner = { corners[i].x, corners[i].y, corners[i].z };
+
+        multiplyVectorByMatrix3f(rotationMatrix, &corner);
+
+        corners[i].x = corner.x;
+        corners[i].y = corner.y;
+        corners[i].z = corner.z;
+    }
+
+    traverseBinaryTree(node->left, rotationMatrix);
+    traverseBinaryTree(node->right, rotationMatrix);
+}
+
+void traverseBinaryTree
 
 /*    
 *

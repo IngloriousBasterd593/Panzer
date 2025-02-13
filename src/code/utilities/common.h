@@ -73,6 +73,12 @@ typedef union {
     vec4f column[4];
 } mat4f;
 
+typedef union {
+    float mat[3][3];
+    float raw[9];
+    vec3f column[3];
+} mat3f;
+
 typedef struct {
     float x;
     float y;
