@@ -98,11 +98,19 @@ void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance)
 {
     for(int i = 0; i < sceneInstance->meshCount; i++)
     {
-        
-    }
+        for(int j = 0; j < sceneInstance->meshCount; i++)
+        {
+            if(i == j)
+            {
+                continue;
+            }
 
-    
-   
+            if(checkBoundingBoxCollision({sceneInstance->meshes[i]->meshMin, sceneInstance->meshes[i]->meshMin}, {sceneInstance->meshes[j]->meshMax, sceneInstance->meshes[j]->meshMax}))
+            {
+                compareBVHAABBs(sceneInstance->meshes[i]->head, sceneInstance->meshes[j]->head);
+            }
+        }   
+    }
 
     return;
 }

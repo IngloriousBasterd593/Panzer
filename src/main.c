@@ -6,8 +6,7 @@
 
 /*      TODO:
 *       react to collisions in checkBVHAABBs() function
-*       implement broad phase collision detection in checkForMeshCollisionAndUpdateMeshParameters() ]
-*       function and put all collision detection together
+*       
 *      
 *       implement rigid body physcis
 *
