@@ -103,6 +103,12 @@ typedef struct {
 } triangle;
 
 typedef struct {
+    vec2f p1;
+    vec2f p2;
+    vec2f p3;
+} triangle2f;
+
+typedef struct {
 
     float xmin;
     float ymin;
@@ -112,20 +118,21 @@ typedef struct {
     float zmax;
 } AABB;
 
-typedef struct {
+typedef struct{
     float* x;
     float* y;
     float* z;
-    float* xProj;
-    float* yProj;
-    float* zProj;
+} vertex_array;
+
+typedef struct {
+    triangle* triangles;
+    vertex_array* vert_array;
     int radius;
     vec3i pos;
     vec3f meshMax;
     vec3f meshMin;
     TreeNode* head;
     vec3i velocity;
-    vec3f* meshNormals;
 } Mesh;
 
 typedef struct {

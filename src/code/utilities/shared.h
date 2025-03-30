@@ -131,67 +131,11 @@ int SDL_init(SDL_Window** window, SDL_Renderer** renderer, SDL_Texture** texture
 
 int get_space(Mesh* meshes) 
 {
-    mesh->x = malloc(VERTICES * sizeof(float));
-    if(mesh->x == NULL) 
+    mesh->triangle = malloc(VERTICES * sizeof(triangle));
+    if(mesh->triangle == NULL) 
     {
         fprintf(stderr, "couldn't init mesh\n");
         return 1;
-    }
-
-    mesh->y = malloc(VERTICES * sizeof(float));
-    if(mesh->y == NULL) 
-    {
-        free(mesh->x);
-        fprintf(stderr, "couldn't init mesh\n");
-        return 1;
-    }
-
-    mesh->z = malloc(VERTICES * sizeof(float));
-    if(mesh->z == NULL) 
-    {
-        free(mesh->x);
-        free(mesh->y);
-        fprintf(stderr, "couldn't init mesh\n");
-        return 1;
-    }
-
-    mesh->xProj = malloc(VERTICES * sizeof(float));
-    if(mesh->xProj == NULL) 
-    {
-        free(mesh->x);
-        free(mesh->y);
-        free(mesh->z);
-        fprintf(stderr, "couldn't init mesh\n");
-        return 1;
-    }
-
-    mesh->yProj = malloc(VERTICES * sizeof(float));
-    if(mesh->yProj == NULL) 
-    {
-        free(mesh->x);
-        free(mesh->y);
-        free(mesh->z);
-        free(mesh->xProj);
-        fprintf(stderr, "couldn't init mesh\n");
-        return 1;
-    }
-
-    mesh->zProj = malloc(VERTICES * sizeof(float));
-    if(mesh->zProj == NULL) 
-    {
-        free(mesh->x);
-        free(mesh->y);
-        free(mesh->z);
-        free(mesh->xProj);
-        free(mesh->yProj);
-        fprintf(stderr, "couldn't init mesh\n");
-        return 1;
-    }
-
-    mesh->meshNormals = malloc(VERTICES * sizeof(vec3f));
-    if(mesh->meshNormals == NULL) {
-        fprintf(stderr, "couldn't get space for normals");
-        goto free;
     }
 
     mesh->AABBes = (AABB*) malloc(sizeof(AABB) * AABBCOUNT);
@@ -208,13 +152,7 @@ void free_space(Scene* sceneInstance)
 {
     for(int i = 0; i < sceneInstance->meshCount; i++) 
     {
-        free(sceneInstance->meshes[i]->x);
-        free(sceneInstance->meshes[i]->y);
-        free(sceneInstance->meshes[i]->z);
-        free(sceneInstance->meshes[i]->xProj);
-        free(sceneInstance->meshes[i]->yProj);
-        free(sceneInstance->meshes[i]->zProj);
-        free(sceneInstance->meshes[i]->meshNormals);
+        free(sceneInstance->meshes[i]->triangles);
         free(sceneInstance->meshes[i]->AABBes);
         free(sceneInstance->meshes[i]);
     }

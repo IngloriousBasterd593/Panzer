@@ -5,9 +5,7 @@
 
 
 /*      TODO:
-*       react to collisions in checkBVHAABBs() function
 *       
-*      
 *       implement rigid body physcis
 *
 *

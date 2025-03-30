@@ -4,6 +4,16 @@
 #include "../utilities/common.h"
 #include "../utilities/shared.h"
 
+vec3f add3f(vec3f* v1, vec3f* v2)
+{
+    return (vec3f) {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
+}
+
+vec3f sub3f(vec3f* v1, vec3f* v2)
+{
+    return (vec3f) {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z};
+}
+
 vec3f unit3f(vec3f* v) 
 {
     float magnitude = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
@@ -464,7 +474,7 @@ void generateSimulationSpaceOctree(OctreeNode* node, int currentDepth, int maxDe
 // traverses a mesh BVH tree and generates bounding boxes for each node with partitioned arrays
 // non trivial to implement box generation and initialisation in a single function
 // therefore this function is a helper function called after initializeBVHTree
-void createBoundingBoxForNode(Mesh* mesh, TreeNode* node, int start, int end)
+void createBoundingBoxForNode(vertex_array* v, TreeNode* node, int start, int end)
 {
     int mid = (start + end) / 2;
 
@@ -474,11 +484,11 @@ void createBoundingBoxForNode(Mesh* mesh, TreeNode* node, int start, int end)
     int l2 = mid;
     int u2 = end;
 
-    memcpy(node->children[0], generateBoundingBox3D(mesh->x, mesh->y, mesh->z, l1, u1), sizeof(AABB));
-    memcpy(node->children[1], generateBoundingBox3D(mesh->x, mesh->y, mesh->z, l2, u2), sizeof(AABB));
+    memcpy(node->children[0], generateBoundingBox3D(v->x, v->y, v->z, l1, u1), sizeof(AABB));
+    memcpy(node->children[1], generateBoundingBox3D(v->x, v->y, v->z, l2, u2), sizeof(AABB));
 
-    createBoundingBoxForNode(mesh, node->children[0], l1, u1);
-    createBoundingBoxForNode(mesh, node->children[1], l2, u2);
+    createBoundingBoxForNode(v, node->children[0], l1, u1);
+    createBoundingBoxForNode(v, node->children[1], l2, u2);
 
     return;
 }
@@ -632,29 +642,22 @@ void traverseBinaryTree
 
 void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int offsetY, int offsetZ) 
 {
-    if(innerRadius <= 10 || outerRadius <= 10) 
-    {
-        fprintf(stderr, "write a correct radius, bozo\n");
-        return;
-    }
-
     mesh->pos.x = offsetX;
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;
 
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
 
-    int index, nextL, nextQ;
+    int index, nextL, nextQ, i = 0, t_index = 0;
 
     for(int j = 0; j < PIXELS; j++) 
     {
         for(int k = 0; k < PIXELS; k++) 
         {
             index = j * PIXELS + k; 
-
-            mesh->x[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j);
-            mesh->y[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j);
-            mesh->z[index] = innerRadius * sin(TWOPIOVERPIXELS * k);
+            mesh->vert_array->x[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * sin(TWOPIOVERPIXELS * j);
+            mesh->vert_array->y[index] = (outerRadius + innerRadius * cos(TWOPIOVERPIXELS * k)) * cos(TWOPIOVERPIXELS * j);
+            mesh->vert_array->z[index] = innerRadius * sin(TWOPIOVERPIXELS * k);  
         }
     }
 
@@ -667,23 +670,36 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
 
             index = j * PIXELS + k; 
 
-            partialDerivativeU.x = mesh->x[index] - mesh->x[index + nextL];
-            partialDerivativeU.y = mesh->y[index] - mesh->y[index + nextL];
-            partialDerivativeU.z = mesh->z[index] - mesh->z[index + nextL];
+            partialDerivativeU.x = mesh->vert_array->x[index] - mesh->vert_array->x[index + nextL];
+            partialDerivativeU.y = mesh->vert_array->y[index] - mesh->vert_array->y[index + nextL];
+            partialDerivativeU.z = mesh->vert_array->z[index] - mesh->vert_array->z[index + nextL];
 
-            partialDerivativeV.x = mesh->x[index] - mesh->x[nextQ * PIXELS + k];
-            partialDerivativeV.y = mesh->y[index] - mesh->y[nextQ * PIXELS + k];
-            partialDerivativeV.z = mesh->z[index] - mesh->z[nextQ * PIXELS + k];
+            partialDerivativeV.x = mesh->vert_array->x[index] - mesh->vert_array->x[nextQ * PIXELS + k];
+            partialDerivativeV.y = mesh->vert_array->y[index] - mesh->vert_array->y[nextQ * PIXELS + k];
+            partialDerivativeV.z = mesh->vert_array->z[index] - mesh->vert_array->z[nextQ * PIXELS + k];
             
             normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
-            mesh->meshNormals[index] = unit3f(&normalVector);
+            mesh->triangles.normal[index] = unit3f(&normalVector);
         }
+    }
+
+    for(int i = 0; i < VERTICES; i += 3) 
+    {
+        mesh->vert_array.x[i + 2] = mesh->triangles[i].p3.z;
+        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.y;
+        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.x;
+        mesh->vert_array.x[i + 1] = mesh->triangles[i].p2.z;
+        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.y;
+        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.x;
+        mesh->vert_array.x[i] = mesh->triangles[i].p1.z;
+        mesh->vert_array.y[i] = mesh->triangles[i].p1.y;
+        mesh->vert_array.x[i] = mesh->triangles[i].p1.x;
     }
 
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
-    createBoundingBoxForNode(mesh, mesh->head, 0, VERTICES);
+    createBoundingBoxForNode(mesh->triangles, mesh->head, 0, VERTICES);
     
     mesh->velocity = zerovector3i;
 
@@ -692,12 +708,6 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
 
 void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ) 
 {
-    if(radius <= 10) 
-    {
-        fprintf(stderr, "write a correct radius, bozo\n");
-        return;
-    }
-
     mesh->pos.x = offsetX;
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;
@@ -710,9 +720,9 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
         for(int k = 0; k < PIXELS; k++) 
         {
             index = j * PIXELS + k; 
-            mesh->x[index] = radius * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
-            mesh->y[index] = radius * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
-            mesh->z[index] = radius * cos(PIOVERPIXELS * j);
+            mesh->vert_array->x[index] = radius * cos(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
+            mesh->vert_array->y[index] = radius * sin(TWOPIOVERPIXELS * k) * sin(PIOVERPIXELS * j);
+            mesh->vert_array->z[index] = radius * cos(PIOVERPIXELS * j);
         }
     }
 
@@ -725,28 +735,74 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
 
             index = j * PIXELS + k; 
 
-            partialDerivativeU.x = mesh->x[index] - mesh->x[index + nextL];
-            partialDerivativeU.y = mesh->y[index] - mesh->y[index + nextL];
-            partialDerivativeU.z = mesh->z[index] - mesh->z[index + nextL];
+            partialDerivativeU.x = mesh->vert_array->x[index] - mesh->vert_array->x[index + nextL];
+            partialDerivativeU.y = mesh->vert_array->y[index] - mesh->vert_array->y[index + nextL];
+            partialDerivativeU.z = mesh->vert_array->z[index] - mesh->vert_array->z[index + nextL];
 
-            partialDerivativeV.x = mesh->x[index] - mesh->x[nextQ * PIXELS + k];
-            partialDerivativeV.y = mesh->y[index] - mesh->y[nextQ * PIXELS + k];
-            partialDerivativeV.z = mesh->z[index] - mesh->z[nextQ * PIXELS + k];
+            partialDerivativeV.x = mesh->vert_array->x[index] - mesh->vert_array->x[nextQ * PIXELS + k];
+            partialDerivativeV.y = mesh->vert_array->y[index] - mesh->vert_array->y[nextQ * PIXELS + k];
+            partialDerivativeV.z = mesh->vert_array->z[index] - mesh->vert_array->z[nextQ * PIXELS + k];
             
             normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
-            mesh->meshNormals[index] = unit3f(&normalVector);
+            mesh->triangles.normal[index] = unit3f(&normalVector);
         }
     }
+
+    for(int i = 0; i < VERTICES; i += 3) 
+    {
+        mesh->vert_array.x[i + 2] = mesh->triangles[i].p3.z;
+        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.y;
+        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.x;
+        mesh->vert_array.x[i + 1] = mesh->triangles[i].p2.z;
+        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.y;
+        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.x;
+        mesh->vert_array.x[i] = mesh->triangles[i].p1.z;
+        mesh->vert_array.y[i] = mesh->triangles[i].p1.y;
+        mesh->vert_array.x[i] = mesh->triangles[i].p1.x;
+    }
+
     
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
-    createBoundingBoxForNode(mesh, mesh->head, 0, VERTICES);
+    createBoundingBoxForNode(mesh->triangles, mesh->head, 0, VERTICES);
 
     mesh->velocity = zerovector3i;
 
     return;
 }
 
+void mesh_init(Mesh* mesh, triangle* outTriangles, uint32_t outTriangleCount, int offsetX, int offsetY, int offsetZ) 
+{
+    mesh->pos.x = offsetX;
+    mesh->pos.y = offsetY;
+    mesh->pos.z = offsetZ;
+    
+    for(int i = 0; i < VERTICES; i++) 
+    {
+        mesh->triangles[i] = outTriangles[i];   
+    }
+
+    for(int i = 0; i < VERTICES; i += 3) 
+    {
+        mesh->vert_array.x[i] = outTriangles[i].p1.x;
+        mesh->vert_array.y[i] = outTriangles[i].p1.y;
+        mesh->vert_array.x[i] = outTriangles[i].p1.z;
+        mesh->vert_array.y[i + 1] = outTriangles[i].p2.x;
+        mesh->vert_array.y[i + 1] = outTriangles[i].p2.y;
+        mesh->vert_array.x[i + 1] = outTriangles[i].p2.z;
+        mesh->vert_array.y[i + 2] = outTriangles[i].p3.x;
+        mesh->vert_array.y[i + 2] = outTriangles[i].p3.y;
+        mesh->vert_array.x[i + 2] = outTriangles[i].p3.z;
+    }
+    
+    memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
+    initializeBVHTree(mesh->head, 0);
+    createBoundingBoxForNode(mesh->triangles, mesh->head, 0, VERTICES);
+
+    mesh->velocity = zerovector3i;
+
+    return;
+}
 
 #endif
