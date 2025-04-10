@@ -712,7 +712,7 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;
     
-    int index, nextL, nextQ;
+    int index, nextL, nextQ, indexPlusOne, indexPlusPixels;
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
     
     for(int j = 0; j < PIXELS; j++) 
@@ -746,6 +746,16 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
             normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
             mesh->triangles.normal[index] = unit3f(&normalVector);
+        }
+    }
+
+    for(int j = 0; j < PIXELS; j++) 
+    {
+        for(int k = 0; k < PIXELS; k++) 
+        {
+            index = j * PIXELS + k; 
+            indexPlusOne = (index + 1) % PIXELS;
+            indexPlusOne = (index + PIXELS);
         }
     }
 
