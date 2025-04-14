@@ -126,9 +126,11 @@ typedef struct{
 
 typedef struct {
     triangle* triangles;
+    int triangle_count;
     vertex_array* vert_array;
     int radius;
     vec3i pos;
+    vec3f COM;
     vec3f meshMax;
     vec3f meshMin;
     TreeNode* head;

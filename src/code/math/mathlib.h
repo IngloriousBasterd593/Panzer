@@ -108,6 +108,39 @@ float minOfTwoF(float num1, float num2)
     }
 }
 
+void perspective(float fov, float aspect, float near, float far, mat4f* m) 
+{
+    float t = tanf(fov / 2.0f);
+    m->mat[0][0] = 1.0f / (aspect * t);
+    m->mat[0][1] = 0.0f;
+    m->mat[0][2] = 0.0f;
+    m->mat[0][3] = 0.0f;
+    m->mat[1][0] = 0.0f;
+    m->mat[1][1] = 1.0f / t;
+    m->mat[1][2] = 0.0f;
+    m->mat[1][3] = 0.0f;
+    m->mat[2][0] = 0.0f;
+    m->mat[2][1] = 0.0f;
+    m->mat[2][2] = -(far + near) / (far - near);
+    m->mat[2][3] = -1.0f;
+    m->mat[3][0] = 0.0f;
+    m->mat[3][1] = 0.0f;
+    m->mat[3][2] = -(2.0f * far * near) / (far - near);
+    m->mat[3][3] = 0.0f;
+}
+
+vec4f multiplyMatrixVector4f(const mat4f* m, const vec4f* v) 
+{
+    vec4f result;
+
+    result.x = m->mat[0][0] * v->x + m->mat[0][1] * v->y + m->mat[0][2] * v->z + m->mat[0][3] * v->w;
+    result.y = m->mat[1][0] * v->x + m->mat[1][1] * v->y + m->mat[1][2] * v->z + m->mat[1][3] * v->w;
+    result.z = m->mat[2][0] * v->x + m->mat[2][1] * v->y + m->mat[2][2] * v->z + m->mat[2][3] * v->w;
+    result.w = m->mat[3][0] * v->x + m->mat[3][1] * v->y + m->mat[3][2] * v->z + m->mat[3][3] * v->w;
+
+    return result;
+}
+
 unsigned int UDFS(vec3f* v1, vec3f* v2)
 {
     return (v2->x - v1->x) * (v2->x - v1->x) + (v2->y - v1->y) * (v2->y - v1->y) + (v2->z - v1->z) * (v2->z - v1->z);
@@ -186,7 +219,8 @@ void multiplyMatrixByMatrix4f(mat4f* m1, mat4f* m2, mat4f* resultMatrix)
 
 vec3f perspectiveNdcToScreen(Mesh* mesh, vec4f* vertex)
 {
-    return (vec3f) { 
+    return (vec3f) 
+    { 
         (((vertex->x / vertex->w) + 1.0f) * HALFWINWIDTH) + mesh->pos.x,
         ((1.0f - (vertex->y / vertex->w)) * HALFWINHEIGHT) + mesh->pos.y,
         vertex->z / vertex->w
@@ -646,9 +680,8 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;
 
+    int index, nextL, nextQ, indexPlusOne, indexPlusPixels, indexPlusPixelsPlusOne, triangle_index;
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
-
-    int index, nextL, nextQ, i = 0, t_index = 0;
 
     for(int j = 0; j < PIXELS; j++) 
     {
@@ -680,26 +713,43 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
             
             normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
 
-            mesh->triangles.normal[index] = unit3f(&normalVector);
+            mesh->triangles[triangle_index].normal = unit3f(&normalVector);
+            triangle_index++;
+            mesh->triangles[triangle_index].normal = unit3f(&normalVector);
+            triangle_index++;
         }
     }
 
-    for(int i = 0; i < VERTICES; i += 3) 
+    triangle_index = 0;
+
+    for(int j = 0; j < PIXELS; j++) 
     {
-        mesh->vert_array.x[i + 2] = mesh->triangles[i].p3.z;
-        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.y;
-        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.x;
-        mesh->vert_array.x[i + 1] = mesh->triangles[i].p2.z;
-        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.y;
-        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.x;
-        mesh->vert_array.x[i] = mesh->triangles[i].p1.z;
-        mesh->vert_array.y[i] = mesh->triangles[i].p1.y;
-        mesh->vert_array.x[i] = mesh->triangles[i].p1.x;
+        for(int k = 0; k < PIXELS; k++) 
+        {
+            index = j * PIXELS + k; 
+            nextL = (k + 1) % PIXELS;
+            nextQ = (j + 1) % PIXELS;
+            indexPlusOne = j * PIXELS + nextL;
+            indexPlusPixels = nextQ * PIXELS + k;
+            indexPlusPixelsPlusOne = nextQ * PIXELS + k + 1;
+
+            mesh->triangles[triangle_index].p1 = { mesh->vert_array.x[index],  mesh->vert_array.y[index],  mesh->vert_array.z[index]};
+            mesh->triangles[triangle_index].p2 = { mesh->vert_array.x[indexPlusOne],  mesh->vert_array.y[indexPlusOne],  mesh->vert_array.z[indexPlusOne]};
+            mesh->triangles[triangle_index].p3 = { mesh->vert_array.x[indexPlusPixels],  mesh->vert_array.y[indexPlusPixels],  mesh->vert_array.z[indexPlusPixels]};
+
+            triangle_index++;
+
+            mesh->triangles[triangle_index].p1 = { mesh->vert_array.x[indexPlusOne],  mesh->vert_array.y[indexPlusOne],  mesh->vert_array.z[indexPlusOne]};
+            mesh->triangles[triangle_index].p2 = { mesh->vert_array.x[indexPlusPixels],  mesh->vert_array.y[indexPlusPixels],  mesh->vert_array.z[indexPlusPixels]};
+            mesh->triangles[triangle_index].p3 = { mesh->vert_array.x[indexPlusPixelsPlusOne],  mesh->vert_array.y[indexPlusPixelsPlusOne],  mesh->vert_array.z[indexPlusPixelsPlusOne]};
+
+            triangle_index++;
+        }
     }
 
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
-    createBoundingBoxForNode(mesh->triangles, mesh->head, 0, VERTICES);
+    createBoundingBoxForNode(mesh->vert_array, mesh->head, 0, VERTICES);
     
     mesh->velocity = zerovector3i;
 
@@ -712,7 +762,7 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;
     
-    int index, nextL, nextQ, indexPlusOne, indexPlusPixels;
+    int index, nextL, nextQ, indexPlusOne, indexPlusPixels, indexPlusPixelsPlusOne, triangle_index;
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
     
     for(int j = 0; j < PIXELS; j++) 
@@ -744,38 +794,45 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
             partialDerivativeV.z = mesh->vert_array->z[index] - mesh->vert_array->z[nextQ * PIXELS + k];
             
             normalVector = crossProduct(&partialDerivativeU, &partialDerivativeV);
+            // set a different normal vector for an adjacent triangle
 
-            mesh->triangles.normal[index] = unit3f(&normalVector);
+            mesh->triangles[triangle_index].normal = unit3f(&normalVector);
+            triangle_index++;
+            mesh->triangles[triangle_index].normal = unit3f(&normalVector);
+            triangle_index++;
         }
     }
 
+    triangle_index = 0;
+ 
     for(int j = 0; j < PIXELS; j++) 
     {
         for(int k = 0; k < PIXELS; k++) 
         {
             index = j * PIXELS + k; 
-            indexPlusOne = (index + 1) % PIXELS;
-            indexPlusOne = (index + PIXELS);
+            nextL = (k + 1) % PIXELS;
+            nextQ = (j + 1) % PIXELS;
+            indexPlusOne = j * PIXELS + nextL;
+            indexPlusPixels = nextQ * PIXELS + k;
+            indexPlusPixelsPlusOne = nextQ * PIXELS + k + 1;
+
+            mesh->triangles[triangle_index].p1 = { mesh->vert_array.x[index],  mesh->vert_array.y[index],  mesh->vert_array.z[index]};
+            mesh->triangles[triangle_index].p2 = { mesh->vert_array.x[indexPlusOne],  mesh->vert_array.y[indexPlusOne],  mesh->vert_array.z[indexPlusOne]};
+            mesh->triangles[triangle_index].p3 = { mesh->vert_array.x[indexPlusPixels],  mesh->vert_array.y[indexPlusPixels],  mesh->vert_array.z[indexPlusPixels]};
+
+            triangle_index++;
+
+            mesh->triangles[triangle_index].p1 = { mesh->vert_array.x[indexPlusOne],  mesh->vert_array.y[indexPlusOne],  mesh->vert_array.z[indexPlusOne]};
+            mesh->triangles[triangle_index].p2 = { mesh->vert_array.x[indexPlusPixels],  mesh->vert_array.y[indexPlusPixels],  mesh->vert_array.z[indexPlusPixels]};
+            mesh->triangles[triangle_index].p3 = { mesh->vert_array.x[indexPlusPixelsPlusOne],  mesh->vert_array.y[indexPlusPixelsPlusOne],  mesh->vert_array.z[indexPlusPixelsPlusOne]};
+
+            triangle_index++;
         }
     }
-
-    for(int i = 0; i < VERTICES; i += 3) 
-    {
-        mesh->vert_array.x[i + 2] = mesh->triangles[i].p3.z;
-        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.y;
-        mesh->vert_array.y[i + 2] = mesh->triangles[i].p3.x;
-        mesh->vert_array.x[i + 1] = mesh->triangles[i].p2.z;
-        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.y;
-        mesh->vert_array.y[i + 1] = mesh->triangles[i].p2.x;
-        mesh->vert_array.x[i] = mesh->triangles[i].p1.z;
-        mesh->vert_array.y[i] = mesh->triangles[i].p1.y;
-        mesh->vert_array.x[i] = mesh->triangles[i].p1.x;
-    }
-
     
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
-    createBoundingBoxForNode(mesh->triangles, mesh->head, 0, VERTICES);
+    createBoundingBoxForNode(mesh->vert_array, mesh->head, 0, VERTICES);
 
     mesh->velocity = zerovector3i;
 
@@ -788,27 +845,30 @@ void mesh_init(Mesh* mesh, triangle* outTriangles, uint32_t outTriangleCount, in
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;
     
-    for(int i = 0; i < VERTICES; i++) 
+    for(int i = 0; i < outTriangleCount; i++) 
     {
         mesh->triangles[i] = outTriangles[i];   
     }
 
-    for(int i = 0; i < VERTICES; i += 3) 
+    for(int j = 0; j < PIXELS; j++) 
     {
-        mesh->vert_array.x[i] = outTriangles[i].p1.x;
-        mesh->vert_array.y[i] = outTriangles[i].p1.y;
-        mesh->vert_array.x[i] = outTriangles[i].p1.z;
-        mesh->vert_array.y[i + 1] = outTriangles[i].p2.x;
-        mesh->vert_array.y[i + 1] = outTriangles[i].p2.y;
-        mesh->vert_array.x[i + 1] = outTriangles[i].p2.z;
-        mesh->vert_array.y[i + 2] = outTriangles[i].p3.x;
-        mesh->vert_array.y[i + 2] = outTriangles[i].p3.y;
-        mesh->vert_array.x[i + 2] = outTriangles[i].p3.z;
+        for(int k = 0; k < PIXELS; k++) 
+        {
+            index = j * PIXELS + k; 
+            nextL = (k + 1) % PIXELS;
+            nextQ = (j + 1) % PIXELS;
+            indexPlusOne = j * PIXELS + nextL;
+            indexPlusPixels = nextQ * PIXELS + k;
+
+            mesh->vert_array->x[index] = {mesh->triangles[index].p1.x, mesh->triangles[index].p1.y, mesh->triangles[index].p1.z};
+
+            
+        }
     }
     
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
-    createBoundingBoxForNode(mesh->triangles, mesh->head, 0, VERTICES);
+    createBoundingBoxForNode(mesh->vert_array, mesh->head, 0, VERTICES);
 
     mesh->velocity = zerovector3i;
 

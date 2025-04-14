@@ -157,35 +157,70 @@ void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance)
 void Mesh_draw(Scene* sceneInstance)
 {
     checkForMeshCollisionAndUpdateMeshParameters(sceneInstance);
-    
-    for(int m = 0; m < sceneInstance->numberOfMeshes; m++)
+
+    for (int m = 0; m < sceneInstance->meshCount; m++)
     {
-        for(int q = 0; q < VERTICES; q++) 
+        Mesh* mesh = sceneInstance->meshes[m];
+
+        for (int i = 0; i < mesh->triangle_count; i++)
         {
-                if(dotProduct3f(sceneInstance->camera->POV, sceneInstance->meshes[m]->triangles[i].normal) < 0) 
-                {
-                    continue;
-                }
+            if (dotProduct3f(sceneInstance->camera.POV, mesh->triangles[i].normal) < 0)
+            {
+                continue;
+            }
 
-                float grayscaleCoefficient = dotProduct3f(sceneInstance->meshes[m]->triangles[i].normal, sceneInstance->camera->lightingDirectionVector);
+            float grayscaleCoefficient = dotProduct3f(mesh->triangles[i].normal, sceneInstance->camera.lightingDirectionVector);
+            unsigned char grayscaleRGB = (unsigned char)(255 - (132 * (1 - grayscaleCoefficient)));
+            unsigned int color = (0xFF << 24) | (grayscaleRGB << 16) 
+                                 | (grayscaleRGB << 8) | grayscaleRGB;
 
-                unsigned char grayscaleRGB = (unsigned char)(255 - (132 * (1 - grayscaleCoefficient)));
-                unsigned int color = (0xFF << 24) | (grayscaleRGB << 16) 
-                                                  | (grayscaleRGB << 8) 
-                                                  | grayscaleRGB;
+            mat4f proj;
+            perspective(sceneInstance->camera.FOV, sceneInstance->camera.aspectRatio, sceneInstance->camera.nearPlane, sceneInstance->camera.farPlane, &proj);
 
-                // Otherwise, using “raw” coordinates 
+            vec4f v1 = { mesh->triangles[i].p1.x, mesh->triangles[i].p1.y, mesh->triangles[i].p1.z, 1.0f };
+            vec4f v2 = { mesh->triangles[i].p2.x, mesh->triangles[i].p2.y, mesh->triangles[i].p2.z, 1.0f };
+            vec4f v3 = { mesh->triangles[i].p3.x, mesh->triangles[i].p3.y, mesh->triangles[i].p3.z, 1.0f };
 
-                triangle2f t = {{sceneInstance->meshes[m]->triangles[i]->p1.x, sceneInstance->meshes[m]->triangles[i]->p1.y},
-                                {sceneInstance->meshes[m]->triangles[i]->p2.x, sceneInstance->meshes[m]->triangles[i]->p2.y},
-                                {sceneInstance->meshes[m]->triangles[i]->p3.x, sceneInstance->meshes[m]->triangles[i]->p3.y},
-                }
+            vec4f p1_proj = multiplyMatrixVector4f(&proj, &v1);
+            vec4f p2_proj = multiplyMatrixVector4f(&proj, &v2);
+            vec4f p3_proj = multiplyMatrixVector4f(&proj, &v3);
 
-                fillTriangle(sceneInstance->meshes[m], sceneInstance->frameColors, &t, sceneInstance->drawPrecision, color);
+            if (p1_proj.w != 0.0f)
+            {
+                p1_proj.x /= p1_proj.w;
+                p1_proj.y /= p1_proj.w;
+                p1_proj.z /= p1_proj.w;
+            }
+            if (p2_proj.w != 0.0f)
+            {
+                p2_proj.x /= p2_proj.w;
+                p2_proj.y /= p2_proj.w;
+                p2_proj.z /= p2_proj.w;
+            }
+            if (p3_proj.w != 0.0f)
+            {
+                p3_proj.x /= p3_proj.w;
+                p3_proj.y /= p3_proj.w;
+                p3_proj.z /= p3_proj.w;
+            }
+
+            int p1_screen_x = (int)((p1_proj.x + 1.0f) * HALFWINWIDTH);
+            int p1_screen_y = (int)((1.0f - p1_proj.y) * HALFWINHEIGHT);
+            int p2_screen_x = (int)((p2_proj.x + 1.0f) * HALFWINWIDTH);
+            int p2_screen_y = (int)((1.0f - p2_proj.y) * HALFWINHEIGHT);
+            int p3_screen_x = (int)((p3_proj.x + 1.0f) * HALFWINWIDTH);
+            int p3_screen_y = (int)((1.0f - p3_proj.y) * HALFWINHEIGHT);
+
+            triangle2f t =
+            {
+                { p1_screen_x, p1_screen_y },
+                { p2_screen_x, p2_screen_y },
+                { p3_screen_x, p3_screen_y }
+            };
+
+            fillTriangle(mesh, sceneInstance->frameColors, &t, sceneInstance->drawPrecision, color);
         }
     }
-
-    return;
 }
 
 void Mesh_rotate(Mesh* mesh, vec3f omega)
