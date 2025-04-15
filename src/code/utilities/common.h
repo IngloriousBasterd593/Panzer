@@ -109,7 +109,6 @@ typedef struct {
 } triangle2f;
 
 typedef struct {
-
     float xmin;
     float ymin;
     float zmin;

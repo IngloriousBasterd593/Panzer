@@ -90,24 +90,29 @@ void lineBresenham(Mesh* mesh, unsigned int* frameColors, vec2f vertexStart, vec
 void fillTriangle(Mesh* mesh, unsigned int* frameColors, triangle2f* t, int trianglePrecision, unsigned int color) 
 {
     float dx1 = (t->p3.x - t->p1.x) / trianglePrecision;
-    float dy1 = (t->p3.y - t->p1;.y) / trianglePrecision;
+    float dy1 = (t->p3.y - t->p1.y) / trianglePrecision;
     float dx2 = (t->p3.x - t->p2.x) / trianglePrecision;
     float dy2 = (t->p3.y - t->p2.y) / trianglePrecision;
 
     for (int i = 0; i < trianglePrecision; i++) 
     {
-        t->p1;.x += dx1;
-        t->p1;.y += dy1;
+        t->p1.x += dx1;
+        t->p1.y += dy1;
 
         t->p2.x += dx2;
         t->p2.y += dy2;
 
-        lineBresenham(mesh, frameColors, t->p1;, t->p2, color);
+        lineBresenham(mesh, frameColors, t->p1, t->p2, color);
     }
 
     return;
 }
 
+//
+//      deprecated
+//
+
+/*
 void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f vertexB, vec2f vertexC, vec2f vertexD, int drawPrecision, unsigned int color) 
 {
     float dxU = (vertexD.x - vertexC.x) / drawPrecision;
@@ -128,6 +133,7 @@ void fillRectangle(Mesh* mesh, unsigned int* frameColors, vec2f vertexA, vec2f v
 
     return;
 }
+    */
 
 void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance) 
 {
@@ -146,7 +152,7 @@ void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance)
 
             if(checkBoundingBoxCollision({sceneInstance->meshes[i]->meshMin, sceneInstance->meshes[i]->meshMin}, {sceneInstance->meshes[j]->meshMax, sceneInstance->meshes[j]->meshMax}))
             {
-                compareBVHAABBs(sceneInstance->meshes[i]->head, sceneInstance->meshes[j]->head);
+                compareBVHAABBs(sceneInstance->meshes[i], sceneInstance->meshes[j]);
             }
         }   
     }
@@ -156,13 +162,16 @@ void checkForMeshCollisionAndUpdateMeshParameters(Scene* sceneInstance)
 
 void Mesh_draw(Scene* sceneInstance)
 {
+    mat4f proj;
+    perspective(sceneInstance->camera.FOV, sceneInstance->camera.aspectRatio, sceneInstance->camera.nearPlane, sceneInstance->camera.farPlane, &proj);
+
     checkForMeshCollisionAndUpdateMeshParameters(sceneInstance);
 
-    for (int m = 0; m < sceneInstance->meshCount; m++)
+    for(int m = 0; m < sceneInstance->meshCount; m++)
     {
         Mesh* mesh = sceneInstance->meshes[m];
 
-        for (int i = 0; i < mesh->triangle_count; i++)
+        for(int i = 0; i < mesh->triangle_count; i++)
         {
             if (dotProduct3f(sceneInstance->camera.POV, mesh->triangles[i].normal) < 0)
             {
@@ -174,12 +183,9 @@ void Mesh_draw(Scene* sceneInstance)
             unsigned int color = (0xFF << 24) | (grayscaleRGB << 16) 
                                  | (grayscaleRGB << 8) | grayscaleRGB;
 
-            mat4f proj;
-            perspective(sceneInstance->camera.FOV, sceneInstance->camera.aspectRatio, sceneInstance->camera.nearPlane, sceneInstance->camera.farPlane, &proj);
-
-            vec4f v1 = { mesh->triangles[i].p1.x, mesh->triangles[i].p1.y, mesh->triangles[i].p1.z, 1.0f };
-            vec4f v2 = { mesh->triangles[i].p2.x, mesh->triangles[i].p2.y, mesh->triangles[i].p2.z, 1.0f };
-            vec4f v3 = { mesh->triangles[i].p3.x, mesh->triangles[i].p3.y, mesh->triangles[i].p3.z, 1.0f };
+            vec4f v1 = { mesh->triangles[i].p1.x + mesh->pos.x, mesh->triangles[i].p1.y + mesh->pos.y, mesh->triangles[i].p1.z + mesh->pos.z, 1.0f };
+            vec4f v2 = { mesh->triangles[i].p2.x + mesh->pos.x, mesh->triangles[i].p2.y + mesh->pos.y, mesh->triangles[i].p2.z + mesh->pos.z, 1.0f };
+            vec4f v3 = { mesh->triangles[i].p3.x + mesh->pos.x, mesh->triangles[i].p3.y + mesh->pos.y, mesh->triangles[i].p3.z + mesh->pos.z, 1.0f };
 
             vec4f p1_proj = multiplyMatrixVector4f(&proj, &v1);
             vec4f p2_proj = multiplyMatrixVector4f(&proj, &v2);

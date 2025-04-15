@@ -565,14 +565,18 @@ void initializeBVHTree(TreeNode* head, int currentDepth)
 }
 
 // compares two BVH AABBs for collision detection
-int compareBVHAABBs(TreeNode* n1, TreeNode* n2, int depth)
+int compareBVHAABBs(TreeNode* n1, TreeNode* n2, vec3i posM1, vec3i posM2, int depth)
 {
     if(n1 == NULL || n2 == NULL || n1->boundingBox == NULL || n2->boundingBox == NULL) 
     {
         return false;
     }
 
-    if(checkBoundingBoxCollision(n1->boundingBox, n2->boundingBox)) 
+    if(checkBoundingBoxCollision({n1->boundingBox.xmin + posM1.x, n1->boundingBox.ymin + posM1.y,n1->boundingBox.zmin + posM1.z,
+                                n1->boundingBox.xmax + posM1.x, n1->boundingBox.ymax + posM1.y, n1->boundingBox.zmax + posM1.z}, 
+
+                                {n2->boundingBox.xmin + posM2.x, n2->boundingBox.ymin + posM2.y, n2->boundingBox.zmin + posM2.z,
+                                n2->boundingBox.xmax + posM2.x, n2->boundingBox.ymax + posM2.y, n2->boundingBox.zmax + posM2.z})) 
     {
         if(depth == BVH_DEPTH) 
         {
@@ -585,7 +589,7 @@ int compareBVHAABBs(TreeNode* n1, TreeNode* n2, int depth)
         {
             for(int j = 0; j < 2; j++)
             {
-                compareBVHAABBs(n1->children[i], n2->children[j], ++depth);
+                compareBVHAABBs(n1->children[i], n2->children[j], posM1, posM2, depth + 1);
             }
         }
     }
@@ -844,6 +848,8 @@ void mesh_init(Mesh* mesh, triangle* outTriangles, uint32_t outTriangleCount, in
     mesh->pos.x = offsetX;
     mesh->pos.y = offsetY;
     mesh->pos.z = offsetZ;
+
+    int triangle_index = 0;
     
     for(int i = 0; i < outTriangleCount; i++) 
     {
@@ -860,11 +866,15 @@ void mesh_init(Mesh* mesh, triangle* outTriangles, uint32_t outTriangleCount, in
             indexPlusOne = j * PIXELS + nextL;
             indexPlusPixels = nextQ * PIXELS + k;
 
-            mesh->vert_array->x[index] = {mesh->triangles[index].p1.x, mesh->triangles[index].p1.y, mesh->triangles[index].p1.z};
+            mesh->vert_array->x[index] = mesh->triangles[triangle_index].p1.x;
+            mesh->vert_array->y[index] = mesh->triangles[triangle_index].p1.y;
+            mesh->vert_array->z[index] = mesh->triangles[triangle_index].p1.z;      
 
-            
+            triangle_index++;
         }
     }
+
+    // calculate center of mass
     
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
