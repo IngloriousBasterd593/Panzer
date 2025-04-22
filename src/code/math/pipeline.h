@@ -221,7 +221,7 @@ void Mesh_draw(Scene* sceneInstance)
             {
                 { p1_screen_x, p1_screen_y },
                 { p2_screen_x, p2_screen_y },
-                { p3_screen_x, p3_screen_y }
+ 0               { p3_screen_x, p3_screen_y }
             };
 
             fillTriangle(mesh, sceneInstance->frameColors, &t, sceneInstance->drawPrecision, color);

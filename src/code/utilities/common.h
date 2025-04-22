@@ -128,12 +128,15 @@ typedef struct {
     int triangle_count;
     vertex_array* vert_array;
     int radius;
+    double V;
+    double M;
     vec3i pos;
     vec3f COM;
     vec3f meshMax;
     vec3f meshMin;
     TreeNode* head;
     vec3i velocity;
+    mat3f initial_inertia_tensor;
 } Mesh;
 
 typedef struct {

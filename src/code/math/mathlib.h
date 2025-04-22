@@ -565,21 +565,23 @@ void initializeBVHTree(TreeNode* head, int currentDepth)
 }
 
 // compares two BVH AABBs for collision detection
-int compareBVHAABBs(TreeNode* n1, TreeNode* n2, vec3i posM1, vec3i posM2, int depth)
+int compareBVHAABBs(TreeNode* n1, TreeNode* n2, Mesh* m1, Mesh* m2, int depth)
 {
     if(n1 == NULL || n2 == NULL || n1->boundingBox == NULL || n2->boundingBox == NULL) 
     {
         return false;
     }
 
-    if(checkBoundingBoxCollision({n1->boundingBox.xmin + posM1.x, n1->boundingBox.ymin + posM1.y,n1->boundingBox.zmin + posM1.z,
-                                n1->boundingBox.xmax + posM1.x, n1->boundingBox.ymax + posM1.y, n1->boundingBox.zmax + posM1.z}, 
+    if (checkBoundingBoxCollision({n1->boundingBox.xmin + m1->pos.x, n1->boundingBox.ymin + m1->pos.y, n1->boundingBox.zmin + m1->pos.z,
+                                    n1->boundingBox.xmax + m1->pos.x, n1->boundingBox.ymax + m1->pos.y, n1->boundingBox.zmax + m1->pos.z},
 
-                                {n2->boundingBox.xmin + posM2.x, n2->boundingBox.ymin + posM2.y, n2->boundingBox.zmin + posM2.z,
-                                n2->boundingBox.xmax + posM2.x, n2->boundingBox.ymax + posM2.y, n2->boundingBox.zmax + posM2.z})) 
+                                {n2->boundingBox.xmin + m2->pos.x, n2->boundingBox.ymin + m2->pos.y, n2->boundingBox.zmin + m2->pos.z,
+                                    n2->boundingBox.xmax + m2->pos.x, n2->boundingBox.ymax + m2->pos.y, n2->boundingBox.zmax + m2->pos.z})) 
     {
+
         if(depth == BVH_DEPTH) 
         {
+            resolveElasticCollision(m1, m2);
 
             // collision detected
             return true;
@@ -589,7 +591,7 @@ int compareBVHAABBs(TreeNode* n1, TreeNode* n2, vec3i posM1, vec3i posM2, int de
         {
             for(int j = 0; j < 2; j++)
             {
-                compareBVHAABBs(n1->children[i], n2->children[j], posM1, posM2, depth + 1);
+                compareBVHAABBs(n1->children[i], n2->children[j], m1, m2, depth + 1);
             }
         }
     }
@@ -675,6 +677,79 @@ void traverseBinaryTree
 
 
 
+void resolveElasticCollision(Mesh* m1, Mesh* m2)
+{
+
+
+
+
+
+
+    return;
+}
+
+void mesh_inertia(Mesh* mesh, double rho, mat3f *I)
+{
+    vec3f g = {0, 0, 0};
+
+    for(int i = 0; i < VERTICES; i++) 
+    {
+        g.x += mesh->vert_array[i].x;
+        g.y += mesh->vert_array[i].y;
+        g.z += mesh->vert_array[i].z;
+    }
+
+    g = v_scale(g, 1.0 / VERTICES);
+
+    mat3f I_origin = m_zero();
+    double M = 0.0;
+    vec3f Mc = {0, 0, 0};
+
+    for(int t = 0; t < mesh->triangle_count; t++)
+    {
+        vec3f p1 = mesh->triangles[t].p1;
+        vec3f p2 = mesh->triangles[t].p2;
+        vec3f p3 = mesh->triangles[t].p3;
+
+        vec3f a = v_sub(p2, p1);
+        vec3f b = v_sub(p3, p1);
+        vec3f c = v_sub(g , p1);
+
+        double V = fabs(v_dot(a,v_cross(b,c))) / 6.0;
+        double m = rho * V;  
+        M += m;
+
+        vec3f cent = v_scale(v_add(v_add(p1,p2),v_add(p3, g)), 0.25);
+        Mc = v_add(Mc, v_scale(cent,m));
+
+        double x[4] = {p1.x, p2.x, p3.x, g.x};
+        double y[4] = {p1.y, p2.y, p3.y, g.y};
+        double z[4] = {p1.z, p2.z, p3.z, g.z};
+
+        double Ixx = m * 0.1 * (S2(y)+S2(z));
+        double Iyy =  m * 0.1 * (S2(z) + S2(x));
+        double Izz =  m * 0.1 * (S2(x) + S2(y));
+        double Ixy = -m * 0.05 * SP(x, y);
+        double Iyz = -m * 0.05 * SP(y, z);
+        double Izx = -m * 0.05 * SP(z, x);
+
+        mat3f Io = {{{ Ixx, Ixy, Izx },
+                    { Ixy, Iyy, Iyz },
+                    { Izx, Iyz, Izz }}};
+
+        I_origin = m_add(I_origin, Io);
+
+        vec3f C = v_scale( Mc, 1.0 / M );
+
+        double C2 = v_dot( C, C );
+        mat3f shift = m_add(m_identity(M * C2), m_scale(outer(C, C), -M));
+
+        *I = m_add(I_origin, m_scale(shift, -1));
+    }
+}
+
+
+
 
 
 
@@ -686,6 +761,8 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
 
     int index, nextL, nextQ, indexPlusOne, indexPlusPixels, indexPlusPixelsPlusOne, triangle_index;
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
+
+    mesh->triangle_count = VERTICES * 2;
 
     for(int j = 0; j < PIXELS; j++) 
     {
@@ -751,6 +828,51 @@ void torus_init(Mesh* mesh, int innerRadius, int outerRadius, int offsetX, int o
         }
     }
 
+    vec3f geometric_center = {0, 0, 0};
+    vec3f COM = {0, 0, 0};
+    vec3f weightedCOMaccumulator = {0, 0, 0};
+    double volume = 0;
+    double mass;
+
+    for(int i = 0; i < VERTICES; i++)
+    {
+        geometric_center.x += mesh->vert_array->x[i];
+        geometric_center.y += mesh->vert_array->y[i];
+        geometric_center.z += mesh->vert_array->z[i];
+    }
+
+    geometric_center.x /= VERTICES;
+    geometric_center.y /= VERTICES;
+    geometric_center.z /= VERTICES;
+
+    for(int i = 0; i < mesh->triangle_count; i++) 
+    {
+        vec3f v2 = {mesh->triangles.p2.x - mesh->triangles.p1.x, mesh->triangles.p2.y - mesh->triangles.p1.y, mesh->triangles.p2.z - mesh->triangles.p1.z};
+        vec3f v3 = {mesh->triangles.p3.x - mesh->triangles.p1.x, mesh->triangles.p3.y - mesh->triangles.p1.y, mesh->triangles.p3.z - mesh->triangles.p1.z};
+        vec3f v4 = {geometric_center.x - mesh->triangles.p1.x, geometric_center.y - mesh->triangles.p1.y, geometric_center.z - mesh->triangles.p1.z};
+
+        double curr_volume = fabs(dotProduct3f(&(crossProduct(&v2, &v3)), &v4)) / 6;
+
+        vec3f tetrahedronCOM = {mesh->triangles.p1.x + mesh->mesh->triangles.p2.x + mesh->triangles.p3.x + geometric_center.x,
+                                mesh->triangles.p1.y + mesh->mesh->triangles.p2.y + mesh->triangles.p3.y + geometric_center.y,
+                                mesh->triangles.p1.z + mesh->mesh->triangles.p2.z + mesh->triangles.p3.z + geometric_center.z}; 
+
+        weightedCOMaccumulator.x += curr_volume * tetrahedronCOM.x;
+        weightedCOMaccumulator.y += curr_volume * tetrahedronCOM.y;
+        weightedCOMaccumulator.z += curr_volume * tetrahedronCOM.z;
+
+
+        double curr_mass = curr_volume * uniform_density;
+        volume += curr_volume;
+        mass += curr_mass;
+    }
+
+    weightedCOMaccumulator.x /= volume;
+    weightedCOMaccumulator.y /= volume;
+    weightedCOMaccumulator.z /= volume;
+
+    mesh->COM = weightedCOMaccumulator;
+
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
     createBoundingBoxForNode(mesh->vert_array, mesh->head, 0, VERTICES);
@@ -768,6 +890,8 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
     
     int index, nextL, nextQ, indexPlusOne, indexPlusPixels, indexPlusPixelsPlusOne, triangle_index;
     vec3f normalVector, partialDerivativeU, partialDerivativeV;
+
+    mesh->triangle_count = 2 * VERTICES;
     
     for(int j = 0; j < PIXELS; j++) 
     {
@@ -833,6 +957,54 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
             triangle_index++;
         }
     }
+
+    vec3f geometric_center = {0, 0, 0};
+    vec3f COM = {0, 0, 0};
+    vec3f weightedCOMaccumulator = {0, 0, 0};
+    double volume = 0;
+    double mass;
+
+    for(int i = 0; i < VERTICES; i++)
+    {
+        geometric_center.x += mesh->vert_array->x[i];
+        geometric_center.y += mesh->vert_array->y[i];
+        geometric_center.z += mesh->vert_array->z[i];
+    }
+
+    geometric_center.x /= VERTICES;
+    geometric_center.y /= VERTICES;
+    geometric_center.z /= VERTICES;
+
+    for(int i = 0; i < mesh->triangle_count; i++) 
+    {
+        vec3f v2 = {mesh->triangles.p2.x - mesh->triangles.p1.x, mesh->triangles.p2.y - mesh->triangles.p1.y, mesh->triangles.p2.z - mesh->triangles.p1.z};
+        vec3f v3 = {mesh->triangles.p3.x - mesh->triangles.p1.x, mesh->triangles.p3.y - mesh->triangles.p1.y, mesh->triangles.p3.z - mesh->triangles.p1.z};
+        vec3f v4 = {geometric_center.x - mesh->triangles.p1.x, geometric_center.y - mesh->triangles.p1.y, geometric_center.z - mesh->triangles.p1.z};
+
+        double curr_volume = fabs(dotProduct3f(&(crossProduct(&v2, &v3)), &v4)) / 6;
+
+        vec3f tetrahedronCOM = {mesh->triangles.p1.x + mesh->mesh->triangles.p2.x + mesh->triangles.p3.x + geometric_center.x,
+                                mesh->triangles.p1.y + mesh->mesh->triangles.p2.y + mesh->triangles.p3.y + geometric_center.y,
+                                mesh->triangles.p1.z + mesh->mesh->triangles.p2.z + mesh->triangles.p3.z + geometric_center.z}; 
+
+        weightedCOMaccumulator.x += curr_volume * tetrahedronCOM.x;
+        weightedCOMaccumulator.y += curr_volume * tetrahedronCOM.y;
+        weightedCOMaccumulator.z += curr_volume * tetrahedronCOM.z;
+
+
+        double curr_mass = curr_volume * uniform_density;
+        volume += curr_volume;
+        mass += curr_mass;
+    }
+
+    mesh->V = volume;
+    mesh->M = mass;
+
+    weightedCOMaccumulator.x /= volume;
+    weightedCOMaccumulator.y /= volume;
+    weightedCOMaccumulator.z /= volume;
+
+    mesh->COM = weightedCOMaccumulator;
     
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
@@ -843,7 +1015,7 @@ void sphere_init(Mesh* mesh, int radius, int offsetX, int offsetY, int offsetZ)
     return;
 }
 
-void mesh_init(Mesh* mesh, triangle* outTriangles, uint32_t outTriangleCount, int offsetX, int offsetY, int offsetZ) 
+void mesh_init(Mesh* mesh, triangle* outTriangles, uint32_t outTriangleCount, int offsetX, int offsetY, int offsetZ, double uniform_density) 
 {
     mesh->pos.x = offsetX;
     mesh->pos.y = offsetY;
@@ -875,7 +1047,96 @@ void mesh_init(Mesh* mesh, triangle* outTriangles, uint32_t outTriangleCount, in
     }
 
     // calculate center of mass
-    
+
+    vec3f geometric_center = {0, 0, 0};
+    vec3f COM = {0, 0, 0};
+    vec3f weightedCOMaccumulator = {0, 0, 0};
+    double volume = 0;
+    double mass;
+
+    for(int i = 0; i < VERTICES; i++)
+    {
+        geometric_center.x += mesh->vert_array->x[i];
+        geometric_center.y += mesh->vert_array->y[i];
+        geometric_center.z += mesh->vert_array->z[i];
+    }
+
+    geometric_center.x /= VERTICES;
+    geometric_center.y /= VERTICES;
+    geometric_center.z /= VERTICES;
+
+    for(int i = 0; i < outTriangles; i++) 
+    {
+        vec3f v2 = {mesh->triangles.p2.x - mesh->triangles.p1.x, mesh->triangles.p2.y - mesh->triangles.p1.y, mesh->triangles.p2.z - mesh->triangles.p1.z};
+        vec3f v3 = {mesh->triangles.p3.x - mesh->triangles.p1.x, mesh->triangles.p3.y - mesh->triangles.p1.y, mesh->triangles.p3.z - mesh->triangles.p1.z};
+        vec3f v4 = {geometric_center.x - mesh->triangles.p1.x, geometric_center.y - mesh->triangles.p1.y, geometric_center.z - mesh->triangles.p1.z};
+
+        double curr_volume = fabs(dotProduct3f(&(crossProduct(&v2, &v3)), &v4)) / 6;
+
+        vec3f tetrahedronCOM = {(mesh->triangles.p1.x + mesh->mesh->triangles.p2.x + mesh->triangles.p3.x + geometric_center.x) / 4,
+                                (mesh->triangles.p1.y + mesh->mesh->triangles.p2.y + mesh->triangles.p3.y + geometric_center.y) / 4,
+                                (mesh->triangles.p1.z + mesh->mesh->triangles.p2.z + mesh->triangles.p3.z + geometric_center.z) / 4}; 
+
+        weightedCOMaccumulator.x += curr_volume * tetrahedronCOM.x;
+        weightedCOMaccumulator.y += curr_volume * tetrahedronCOM.y;
+        weightedCOMaccumulator.z += curr_volume * tetrahedronCOM.z;
+
+
+        double curr_mass = curr_volume * uniform_density;
+        volume += curr_volume;
+        mass += curr_mass;
+    }
+
+    weightedCOMaccumulator.x /= volume;
+    weightedCOMaccumulator.y /= volume;
+    weightedCOMaccumulator.z /= volume;
+
+    mesh->COM = weightedCOMaccumulator;
+
+    // inertia tensor
+
+    mat3f I_origin = mat3f_zero();
+    double mass_total = 0.0;
+
+    for(int t = 0; t < mesh->triangle_count; t++) 
+    {
+        vec3f p1 = mesh->triangles[t].p1;
+        vec3f p2 = mesh->triangles[t].p2;
+        vec3f p3 = mesh->triangles[t].p3;
+        vec3f p4 = geometric_center;
+
+        vec3f a = { p2.x - p1.x, p2.y - p1.y, p2.z - p1.z };
+        vec3f b = { p3.x - p1.x, p3.y - p1.y, p3.z - p1.z };
+        vec3f c = { p4.x - p1.x, p4.y - p1.y, p4.z - p1.z };
+
+        double V = fabs(dotProduct3f(a, crossProduct(b, c))) / 6.0;
+        double m = V * uniform_density;
+        mass_total += m;
+
+        double x[4] = { p1.x, p2.x, p3.x, p4.x };
+        double y[4] = { p1.y, p2.y, p3.y, p4.y };
+        double z[4] = { p1.z, p2.z, p3.z, p4.z };
+
+        double Ixx =  m * 0.1 * (S2(y) + S2(z));
+        double Iyy =  m * 0.1 * (S2(z) + S2(x));
+        double Izz =  m * 0.1 * (S2(x) + S2(y));
+        double Ixy = -m * 0.05 * SP(x, y);
+        double Iyz = -m * 0.05 * SP(y, z);
+        double Izx = -m * 0.05 * SP(z, x);
+
+        mat3f Io = {{{ Ixx, Ixy, Izx },
+                    { Ixy, Iyy, Iyz },
+                    { Izx, Iyz, Izz }}};
+
+        I_origin = mat3f_add(I_origin, Io);
+    }
+
+    double COM2 = dotProduct3f(COM, COM);
+    mat3f shift = mat3f_add(mat3f_identity(mass_total * COM2), mat3f_scale(mat3f_outer(COM, COM), -mass_total));
+    mat3f I_body = mat3f_add(I_origin, mat3f_scale(shift, -1));
+
+    mesh->I_body = I_body;
+
     memcpy(mesh->head->boundingBox, generateBoundingBox(mesh));
     initializeBVHTree(mesh->head, 0);
     createBoundingBoxForNode(mesh->vert_array, mesh->head, 0, VERTICES);
